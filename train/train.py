@@ -17,7 +17,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, ReduceLROnPlateau, Early
 from keras.optimizers import Adam
 from keras.metrics import Recall, Precision
 from models.deeplabv3_plus import deeplabv3_plus
-from metrics import dice_loss, dice_coef, iou
+from metrics.metrics import dice_loss, dice_coef, iou, combined_loss
 
 """ Global parameters """
 H = 512
@@ -47,10 +47,11 @@ def read_image(path):
     x = x.astype(np.float32)
     return x
 
+
+# Normalizing depends on mask format, binary mask works for values (0 to 255) which does require it
 def read_mask(path):
     path = path.decode() # Convert bytes to string
     y = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    # Pixels don't need to be normalized
     y = y.astype(np.float32)
     y = np.expand_dims(y, axis=-1) # Add channel dimension
     return y
@@ -83,17 +84,17 @@ if __name__ == "__main__":
     np.random.seed(42)
     tf.random.set_seed(42)
     
-    """ Directory for storing files """
-    create_dir("files")
+    # """ Directory for storing files """
+    # create_dir("files")
     
     """ Hyperparameters """
     batch_size = 2
     lr = 1e-4
     num_epochs = 20
-    model_path = os.path.join("files", "deeplabv3_plus.h5")
-    csv_path = os.path.join("files", "training_log.csv")
+    model_path = os.path.join("..", "models", "deeplabv3_plus.h5")
+    csv_path = os.path.join("..", "runs", "training_log.csv")
     
-    tensor_logs = os.path.join("files", "tensor_logs")
+    tensor_logs = os.path.join("..", "runs", "tensor_logs")
     create_dir(tensor_logs)
     
     """ Dataset"""
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         
     """ Model """
     model = deeplabv3_plus((H, W, 3))
-    model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=[dice_coef, iou, Recall(), Precision()])
+    model.compile(loss=combined_loss, optimizer=Adam(lr), metrics=[dice_coef, iou, Recall(), Precision()])
     
     """ Callbacks """
     callbacks = [
@@ -134,6 +135,7 @@ if __name__ == "__main__":
         CSVLogger(csv_path),
         # TensorBoard(log_dir=tensor_logs),
         EarlyStopping(monitor="val_loss", patience=20, restore_best_weights=False),
+        # TODO: Callback pro vizualizaci vstupu, predikce a ground truth v každé epoše
     ]
     
     """ Training """

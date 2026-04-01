@@ -1,8 +1,5 @@
 """
 This file contains the implementation of DeepLabV3+ architecture for semantic segmentation on the people_segmentation dataset.
-
-It can use improvements
-- Adjusting filepaths for workspace folder structure.
 """
 
 import os

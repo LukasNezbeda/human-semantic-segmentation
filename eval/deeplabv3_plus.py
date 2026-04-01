@@ -1,8 +1,6 @@
 """
 This file contains the evaluation code for DeepLabV3+ on the people_segmentation dataset.
 
-It can use improvements
-- Adjusting filepaths for workspace folder structure.
 """
 
 import os
@@ -14,17 +12,16 @@ import pandas as pd
 from glob import glob
 from tqdm import tqdm
 import tensorflow as tf
-from tensorflow.keras.utils import CustomObjectScope
-from tensorflow.keras.models import load_model
+from keras.utils import CustomObjectScope
+from keras.models import load_model
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from metrics import dice_loss, dice_coef, iou
 from train import load_data
 
-
 """ Global parameters """
 H = 512
 W = 512
-model_path = os.path.join("files", "deeplabv3_plus.h5")
+model_path = os.path.join("..", "models", "deeplabv3_plus.h5")
 
 """ Directory Creation """
 def create_dir (path):

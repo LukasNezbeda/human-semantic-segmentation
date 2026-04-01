@@ -1,8 +1,6 @@
 """
 This file contains the metrics and loss function used for training DeepLabV3+ on the people_segmentation dataset.
 
-It can use improvements
-- Adjusting filepaths for workspace folder structure.
 """
 
 import numpy as np
@@ -18,6 +16,7 @@ smooth = 1e-15
 # yields unknown type
 # better to be replacede with a pure-Tensorflow implementation
 def iou(y_true, y_pred):
+    # Flatten
     y_true_f = tf.reshape(y_true, [-1])
     y_pred_f = tf.reshape(y_pred, [-1])
     intersection = tf.reduce_sum(y_true_f * y_pred_f)
@@ -39,6 +38,7 @@ def iou(y_true, y_pred):
 
 # Calculates performance of segmentation tasks
 def dice_coef(y_true, y_pred): 
+    # Flatten (Stejná funkcionalita)
     y_true = Flatten()(y_true)
     y_pred = Flatten()(y_pred)
     intersection = tf.reduce_sum(y_true * y_pred)
@@ -47,3 +47,7 @@ def dice_coef(y_true, y_pred):
 # Main loss function
 def dice_loss(y_true, y_pred): 
     return 1.0 - dice_coef(y_true, y_pred)
+
+
+def combined_loss(y_true, y_pred):
+    return 0.5 * dice_loss(y_true, y_pred) + 0.5 * tf.keras.losses.BinaryCrossentropy()(y_true, y_pred)
