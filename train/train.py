@@ -1,8 +1,5 @@
 """
 This file contains the training code for DeepLabV3+ on the people_segmentation dataset.
-
-It can use improvements
-- Adjusting filepaths for workspace folder structure.
 """
 
 import os
