@@ -12,11 +12,11 @@ import pandas as pd
 from glob import glob
 from tqdm import tqdm
 import tensorflow as tf
+from tensorflow.keras.models import load_model, Model # type: ignore
 from keras.utils import CustomObjectScope
-from keras.models import load_model
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from metrics import dice_loss, dice_coef, iou
-from train import load_data
+from metrics.metrics import dice_loss, dice_coef, iou
+from train.train_deeplabv3_plus import load_data
 
 """ Global parameters """
 H = 512

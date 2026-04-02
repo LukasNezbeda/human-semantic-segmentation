@@ -16,6 +16,8 @@ from keras.metrics import Recall, Precision
 from models.deeplabv3_plus import deeplabv3_plus
 from metrics.metrics import dice_loss, dice_coef, iou, combined_loss
 
+from typing import Sequence
+
 """ Global parameters """
 H = 512
 W = 512
@@ -26,12 +28,13 @@ def create_dir(path):
         os.makedirs(path)
         
         
-def shuffling(x, y):
-    # Might sound "None" is not iterable
-    x, y = shuffle(x, y, random_state=42)
+def shuffling(x: Sequence[str], y: Sequence[str]) -> tuple[Sequence[str], Sequence[str]]:
+    # Sounds "None" is not iterable
+    x, y = shuffle(x, y, random_state=42) # type: ignore
     return x, y
 
-def load_data(path):
+# Added type checking
+def load_data(path: str) -> tuple[list[str], list[str]]:
     x = sorted(glob(os.path.join(path, "image", "*.png")))
     y = sorted(glob(os.path.join(path, "mask", "*.png")))
 
@@ -95,7 +98,7 @@ if __name__ == "__main__":
     create_dir(tensor_logs)
     
     """ Dataset"""
-    dataset_path = "new_data"
+    dataset_path = os.path.join("..", "data", "new_data")
     
     train_path = os.path.join(dataset_path, "train")
     val_path = os.path.join(dataset_path, "test")
@@ -107,8 +110,8 @@ if __name__ == "__main__":
     # No need to shuffle validation data
     val_x, val_y = load_data(val_path)
     
-    # Might sound that it cannot be sized
-    print(f"Training samples: {len(train_x)} | {len(train_y)}")
+    # Sounds that it cannot be sized
+    print(f"Training samples: {len(train_x)} | {len(train_y)}") # type: ignore
     print(f"Validation samples: {len(val_x)} | {len(val_y)}")
     
     train_dataset = tf_dataset(train_x, train_y, batch_size)
