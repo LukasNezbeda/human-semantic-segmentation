@@ -34,7 +34,6 @@ def download_dataset(output_dir: Path) -> bool:
         bool: True if download was successful, False otherwise.
     """
     try:
-        # url = "https://www.kaggle.com/datasets/nikhilroxtomar/person-segmentation/download"
         url = "https://www.kaggle.com/api/v1/datasets/download/nikhilroxtomar/person-segmentation"
         zip_path = output_dir / "person_segmentation.zip"
 

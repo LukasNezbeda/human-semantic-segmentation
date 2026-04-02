@@ -3,7 +3,7 @@ This file is a data loader for people_segmentation dataset to be used for DeepLa
 
 It can use improvements
 - Data augmentation done in RAM instead of on disk.
-- Adjusting filepaths for workspace folder structure.
+- more dynamic folder structure handling
 """
 
 import os
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     
     """ Dataset loading """
-    data_path = "people_segmentation"
+    data_path = "data/person_segmentation/people_segmentation"
     load_data(data_path)
     
     (train_x, train_y), (test_x, test_y) = load_data(data_path)
@@ -150,11 +150,11 @@ if __name__ == "__main__":
     print(f"Testing samples:\t {len(test_x)} | {len(test_y)}")
     
     """ Create directories to save augmented data """
-    create_dir("new_data/train/image")
-    create_dir("new_data/train/mask")
-    create_dir("new_data/test/image")
-    create_dir("new_data/test/mask")
+    create_dir("data/person_segmentation/new_data/train/image")
+    create_dir("data/person_segmentation/new_data/train/mask")
+    create_dir("data/person_segmentation/new_data/test/image")
+    create_dir("data/person_segmentation/new_data/test/mask")
     
     """ Data augmentation """
-    augment_data(train_x, train_y, "new_data/train/", augment=True)
-    augment_data(test_x, test_y, "new_data/test/", augment=True)
+    augment_data(train_x, train_y, "data/person_segmentation/new_data/train/", augment=True)
+    augment_data(test_x, test_y, "data/person_segmentation/new_data/test/", augment=True)

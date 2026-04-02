@@ -98,7 +98,7 @@ if __name__ == "__main__":
     create_dir(tensor_logs)
     
     """ Dataset"""
-    dataset_path = os.path.join("..", "data", "new_data")
+    dataset_path = os.path.join("..", "data", "person_segmentation", "new_data")
     
     train_path = os.path.join(dataset_path, "train")
     val_path = os.path.join(dataset_path, "test")
