@@ -3,6 +3,12 @@ This file contains the training code for DeepLabV3+ on the people_segmentation d
 """
 
 import os
+import sys
+
+# Add parent directory to path to enable imports
+# Allows to reach the models and metrics module
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Suppress TensorFlow logging
 
 import numpy as np
@@ -91,14 +97,19 @@ if __name__ == "__main__":
     batch_size = 2
     lr = 1e-4
     num_epochs = 20
-    model_path = os.path.join("..", "models", "deeplabv3_plus.h5")
-    csv_path = os.path.join("..", "runs", "training_log.csv")
     
-    tensor_logs = os.path.join("..", "runs", "tensor_logs")
+    # Get the project root directory (parent of the train folder)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    model_path = os.path.join(project_root, "runs", "deeplabv3_plus.h5")
+    csv_path = os.path.join(project_root, "runs", "training_log.csv")
+    
+    tensor_logs = os.path.join(project_root, "runs", "tensor_logs")
     create_dir(tensor_logs)
     
     """ Dataset"""
-    dataset_path = os.path.join("..", "data", "person_segmentation", "new_data")
+    dataset_path = os.path.join(project_root, "data", "person_segmentation", "new_data")
+    print(f"Dataset path: {dataset_path}")
     
     train_path = os.path.join(dataset_path, "train")
     val_path = os.path.join(dataset_path, "test")

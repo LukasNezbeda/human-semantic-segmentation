@@ -4,6 +4,12 @@ This file contains the evaluation code for DeepLabV3+ on the people_segmentation
 """
 
 import os
+import sys
+
+# Add parent directory to path to enable imports
+# Allows to reach the metrics and train modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import numpy as np
@@ -21,7 +27,11 @@ from train.train_deeplabv3_plus import load_data
 """ Global parameters """
 H = 512
 W = 512
-model_path = os.path.join("..", "models", "deeplabv3_plus.h5")
+
+# Get the project root directory (parent of the train folder)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+model_path = os.path.join(project_root, "models", "deeplabv3_plus.h5")
 
 """ Directory Creation """
 def create_dir (path):
