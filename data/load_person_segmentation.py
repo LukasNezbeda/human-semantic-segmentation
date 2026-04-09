@@ -3,7 +3,7 @@ This file is a data loader for people_segmentation dataset to be used for DeepLa
 
 It can use improvements
 - Data augmentation done in RAM instead of on disk.
-- more dynamic folder structure handling
+- Find a way to chain database download and loading together
 """
 
 import os
@@ -14,7 +14,6 @@ from glob import glob
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from albumentations import HorizontalFlip, ChannelShuffle, CoarseDropout, CenterCrop, Rotate, GridDistortion, OpticalDistortion
-
 
 
 """ Automating Data Preparation """
@@ -56,13 +55,16 @@ def augment_data(images, masks, save_path, augment=True):
         """ Extracting the filename  """
         # Windows handling
         # name = x.split("\\")[-1].split(".") # Extract the last element of the path [filename], [extension] (windows)
-        name = x.split("\\")[-1].split(".")[0] # Extract the last element of the path [filename] (windows)
+        # name = x.split("\\")[-1].split(".")[0] # Extract the last element of the path [filename] (windows)
         # print(f"\n{name}")
         
         # Linux handling
         # name = x.split("/")[-1].split(".") # Extract the last element of the path [filename], [extension] (Linux)
         # name = x.split("/")[-1].split(".")[0] # Extract the last element of the path [filename] (Linux)
         # print(name)
+
+        # Cross-platform handling
+        name = os.path.splitext(os.path.basename(x))[0]
         
         """ Reading the image and mask """
         x = cv2.imread(x, cv2.IMREAD_COLOR)
@@ -142,6 +144,11 @@ if __name__ == "__main__":
     
     """ Dataset loading """
     data_path = "data/person_segmentation/people_segmentation"
+
+    # Check if data path exists
+    if not os.path.exists(data_path):
+        print(f"Dataset not found at {data_path}. Run dl_person_segmentation.py to download the dataset.")
+
     load_data(data_path)
     
     (train_x, train_y), (test_x, test_y) = load_data(data_path)

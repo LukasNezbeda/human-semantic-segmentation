@@ -11,6 +11,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Suppress TensorFlow logging
 
+# Pokud je zabraná karta 0, použijeme kartu 1 pro trénování
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 import numpy as np
 import cv2
 from glob import glob
@@ -150,8 +154,4 @@ if __name__ == "__main__":
     ]
     
     """ Training """
-    model.fit(
-        train_dataset, 
-        epochs=num_epochs,
-        validation_data=val_dataset, 
-        callbacks=callbacks)
+    model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset, callbacks=callbacks)
