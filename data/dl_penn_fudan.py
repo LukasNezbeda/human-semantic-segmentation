@@ -1,7 +1,8 @@
 """
-Script to download the Person Segmentation dataset from Kaggle using curl.
+Script to download the Penn Fudan dataset from Kaggle using curl.
+This is a copy of dl_person_segmentation.py, but adapted for the Penn Fudan dataset.
 
-The dataset will be downloaded and extracted to: data/person_segmentation/
+The dataset will be downloaded and extracted to: data/penn_fudan/
 
 Prerequisites:
     - curl must be installed and available in PATH
@@ -17,9 +18,9 @@ def setup_dataset_directory() -> Path:
     """Create the dataset directory structure.
 
     Returns:
-        Path: The path to the person_segmentation directory.
+        Path: The path to the penn_fudan directory.
     """
-    dataset_dir = Path(__file__).parent / "person_segmentation"
+    dataset_dir = Path(__file__).parent / "penn_fudan"
     dataset_dir.mkdir(parents=True, exist_ok=True)
     return dataset_dir
 
@@ -34,8 +35,8 @@ def download_dataset(output_dir: Path) -> bool:
         bool: True if download was successful, False otherwise.
     """
     try:
-        url = "https://www.kaggle.com/api/v1/datasets/download/nikhilroxtomar/person-segmentation"
-        zip_path = output_dir / "person_segmentation.zip"
+        url = "https://www.kaggle.com/api/v1/datasets/download/psvishnu/pennfudan-database-for-pedestrian-detection-zip"
+        zip_path = output_dir / "penn_fudan.zip"
 
         print(f"Downloading dataset from: {url}")
         print(f"Destination: {zip_path}")
@@ -71,15 +72,15 @@ def download_dataset(output_dir: Path) -> bool:
 
 
 def main() -> None:
-    """Main function to download the Person Segmentation dataset."""
+    """Main function to download the Penn Fudan dataset."""
     print("=" * 60)
-    print("Person Segmentation Dataset Downloader")
+    print("Penn Fudan Dataset Downloader")
     print("=" * 60)
 
     output_dir = setup_dataset_directory()
 
     # Check if dataset already exists
-    expected_subdirs = {"people_segmentation"}
+    expected_subdirs = {"PennFudanPed"}
     existing_subdirs = {
         item.name for item in output_dir.iterdir() if item.is_dir()
     }
