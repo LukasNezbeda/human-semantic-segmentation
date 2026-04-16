@@ -35,7 +35,7 @@ def download_dataset(output_dir: Path) -> bool:
         bool: True if download was successful, False otherwise.
     """
     try:
-        url = "https://www.kaggle.com/api/v1/datasets/download/shuvoalok/cityscapes"
+        url = "https://www.kaggle.com/api/v1/datasets/download/electraawais/cityscape-dataset"
         zip_path = output_dir / "cityscapes.zip"
 
         print(f"Downloading dataset from: {url}")
@@ -80,7 +80,7 @@ def main() -> None:
     output_dir = setup_dataset_directory()
 
     # Check if dataset already exists
-    expected_subdirs = {"train", "val"}
+    expected_subdirs = {"Cityscape Dataset", "Fine Annotations"}
     existing_subdirs = {
         item.name for item in output_dir.iterdir() if item.is_dir()
     }
