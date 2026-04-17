@@ -22,7 +22,7 @@ from tensorflow.keras.models import load_model, Model # type: ignore
 from keras.utils import CustomObjectScope
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from metrics.metrics import dice_loss, dice_coef, iou
-from train.train_deeplabv3_plus import load_data
+from train.deeplabv3_plus.train_dl3p_person_seg import load_data
 
 """ Global parameters """
 H = 512
@@ -31,7 +31,7 @@ W = 512
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-model_path = os.path.join(project_root, "models", "deeplabv3_plus.h5")
+model_path = os.path.join(project_root, "runs", "deeplabv3_plus.h5")
 
 """ Directory Creation """
 def create_dir (path):

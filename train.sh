@@ -1,4 +1,5 @@
 #!/bin/bash
 
 # run experiments
-python -u train/train_deeplabv3_plus.py > log.txt
+python -u train/deeplabv3_plus/train_dl3p_person_seg.py > log.txt
+

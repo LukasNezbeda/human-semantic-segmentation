@@ -89,7 +89,7 @@ def tf_dataset(x, y, batch=2):
     
     return dataset
 
-if __name__ == "__main__":
+def main() -> None:
     """ Seeding """
     np.random.seed(42)
     tf.random.set_seed(42)
@@ -155,3 +155,9 @@ if __name__ == "__main__":
     
     """ Training """
     model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset, callbacks=callbacks)
+
+    return
+
+
+if __name__ == "__main__":
+    main()
