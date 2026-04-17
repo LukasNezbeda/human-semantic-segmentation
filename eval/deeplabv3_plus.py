@@ -49,9 +49,11 @@ def save_results(image, mask, prediction, save_path):
 
     mask = np.expand_dims(mask, axis=-1) ## (512, 512, 1)
     mask = np.concatenate([mask, mask, mask], axis=-1) # (512, 512, 3)
+    mask = mask * 255 # Scale it to 255 for visualization
 
     y_pred = np.expand_dims(y_pred, axis=-1) # type: ignore ## (512, 512, 1)
     y_pred = np.concatenate([y_pred, y_pred, y_pred], axis=-1) # (512, 512, 3)
+    y_pred = y_pred * 255 # Scale it to 255 for visualization
 
     cat_images = np.concatenate([image, line, mask, line, y_pred], axis=1)
     cv2.imwrite(save_path, cat_images)
