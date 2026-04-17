@@ -20,7 +20,7 @@ from tqdm import tqdm
 import tensorflow as tf
 # from tensorflow.keras.utils import CustomObjectScope # Deprecated
 from keras.models import Model
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, jaccard_score, precision_score, recall_score
 from metrics.metrics import dice_loss, dice_coef, iou
 from models.deeplabv3_plus import deeplabv3_plus
 from train.deeplabv3_plus.train_dl3p_person_seg import load_data
@@ -53,6 +53,8 @@ def save_results(image, mask, y_pred, save_path):
 
     y_pred = np.expand_dims(y_pred, axis=-1) ## (512, 512, 1)
     y_pred = np.concatenate([y_pred, y_pred, y_pred], axis=-1) # (512, 512, 3)
+
+    masked_image = image * y_pred # Image and mask view
     y_pred = y_pred * 255 # Scale it to 255 for visualization
 
     cat_images = np.concatenate([image, line, mask, line, y_pred], axis=1)
@@ -86,6 +88,8 @@ if __name__ == "__main__":
     print(f"Test samples: {len(test_x)} | {len(test_y)}")
 
     """ Evaluation and Prediction """
+    SCORE = []
+
     for x, y in tqdm(zip(test_x, test_y), total=len(test_x)):
         """ Name Extraction """
         name = os.path.splitext(os.path.basename(x))[0]
@@ -114,5 +118,28 @@ if __name__ == "__main__":
         save_image_path = f"results/{name}.png"
         save_results(image, mask, y_pred, save_image_path)
 
+        """ Flatten Arrays """
+        mask = mask.flatten() # type: ignore
+        y_pred = y_pred.flatten()
+        
+        """ Metrics Calculation """
+        acc_value = accuracy_score(mask, y_pred)
+        f1_value = f1_score(mask, y_pred, labels=[0, 1], average='binary') # 0 for background, 1 for foreground
+        jac_value = jaccard_score(mask, y_pred, labels=[0, 1], average='binary')
+        precision_value = precision_score(mask, y_pred, labels=[0, 1], average='binary')
+
+        SCORE.append([name, acc_value, f1_value, jac_value, precision_value])
 
         break
+
+    """ Metrics values """
+    score = [s[1:] for s in SCORE] # Extracting the metrics values from the set
+    score = np.mean(score, axis=0) # Calculating the mean of the metrics values
+    print(f"Accuracy: {score[0]:0.5f}")
+    print(f"F1-Score: {score[1]:0.5f}")
+    print(f"Jaccard-Score: {score[2]:0.5f}")
+    print(f"Precision: {score[3]:0.5f}")
+    print(f"Recall: {score[4]:0.5f}")
+
+    df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score", "Precision"])
+    df.to_csv("results/metrics.csv")
