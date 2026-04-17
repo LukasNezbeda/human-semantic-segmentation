@@ -142,5 +142,5 @@ if __name__ == "__main__":
     print(f"Recall: {score[4]:0.5f}")
     print(f"Precision: {score[3]:0.5f}")
 
-    df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score", "Precision"])
+    df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score" , "Recall", "Precision"])
     df.to_csv("results/metrics.csv")
