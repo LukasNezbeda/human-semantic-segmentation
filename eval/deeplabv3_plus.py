@@ -72,4 +72,14 @@ if __name__ == "__main__":
         name = os.path.splitext(os.path.basename(x))[0]
         print(name)
 
+        """ Reading the image """
+        image = cv2.imread(x, cv2.IMREAD_COLOR)
+        x = image/255.0 # type: ignore
+
+        print(x.shape) # Before dimension expansion
+
+        x = np.expand_dims(x, axis=0)
+
+        print(x.shape) # After dimension expansion
+
         break
