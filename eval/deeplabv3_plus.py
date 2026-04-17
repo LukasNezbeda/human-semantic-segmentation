@@ -126,9 +126,10 @@ if __name__ == "__main__":
         acc_value = accuracy_score(mask, y_pred)
         f1_value = f1_score(mask, y_pred, labels=[0, 1], average='binary') # 0 for background, 1 for foreground
         jac_value = jaccard_score(mask, y_pred, labels=[0, 1], average='binary')
+        recall_value = recall_score(mask, y_pred, labels=[0, 1], average='binary')
         precision_value = precision_score(mask, y_pred, labels=[0, 1], average='binary')
 
-        SCORE.append([name, acc_value, f1_value, jac_value, precision_value])
+        SCORE.append([name, acc_value, f1_value, jac_value, recall_value, precision_value])
 
         break
 
@@ -138,8 +139,8 @@ if __name__ == "__main__":
     print(f"Accuracy: {score[0]:0.5f}")
     print(f"F1-Score: {score[1]:0.5f}")
     print(f"Jaccard-Score: {score[2]:0.5f}")
-    print(f"Precision: {score[3]:0.5f}")
     print(f"Recall: {score[4]:0.5f}")
+    print(f"Precision: {score[3]:0.5f}")
 
     df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score", "Precision"])
     df.to_csv("results/metrics.csv")
