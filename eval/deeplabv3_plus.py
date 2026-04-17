@@ -39,6 +39,23 @@ model_path = os.path.join(project_root, "runs", "deeplabv3_plus.h5")
 def create_dir(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
+
+def save_results(image, mask, prediction, save_path):
+    ## i - m - yp - yp*i
+    # Same dimensions
+    # 3 channels
+
+    line = np.ones((H, 10, 3)) * 128 # Grey image
+
+    mask = np.expand_dims(mask, axis=-1) ## (512, 512, 1)
+    mask = np.concatenate([mask, mask, mask], axis=-1) # (512, 512, 3)
+
+    y_pred = np.expand_dims(y_pred, axis=-1) # type: ignore ## (512, 512, 1)
+    y_pred = np.concatenate([y_pred, y_pred, y_pred], axis=-1) # (512, 512, 3)
+
+    cat_images = np.concatenate([image, line, mask, line, y_pred], axis=1)
+    cv2.imwrite(save_path, cat_images)
+
         
 if __name__ == "__main__":
     """ Seeding """
@@ -76,10 +93,24 @@ if __name__ == "__main__":
         image = cv2.imread(x, cv2.IMREAD_COLOR)
         x = image/255.0 # type: ignore
 
-        print(x.shape) # Before dimension expansion
+        # print(x.shape) # Before dimension expansion
 
         x = np.expand_dims(x, axis=0)
 
-        print(x.shape) # After dimension expansion
+        # print(x.shape) # After dimension expansion
+
+        """ Reading the mask """
+        mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)
+
+        """ Prediction """
+        y_pred = model.predict(x)[0] # Extract first item from the list
+        y_pred = np.squeeze(y_pred, axis=-1) # Squeeze it
+        y_pred = y_pred > 0.5
+        y_pred = y_pred.astype(np.int32)
+
+        """ Saving the prediction """
+        save_image_path = f"results/{name}.png"
+        save_results(image, mask, y_pred, save_image_path)
+
 
         break
