@@ -20,9 +20,9 @@ import cv2
 from glob import glob
 from sklearn.utils import shuffle
 import tensorflow as tf
-from keras.callbacks import ModelCheckpoint, CSVLogger, ReduceLROnPlateau, EarlyStopping, TensorBoard
-from keras.optimizers import Adam
-from keras.metrics import Recall, Precision
+from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger, ReduceLROnPlateau, EarlyStopping, TensorBoard # type: ignore
+from tensorflow.keras.optimizers import Adam # type: ignore
+from tensorflow.keras.metrics import Recall, Precision # type: ignore
 from models.deeplabv3_plus import deeplabv3_plus
 from metrics.metrics import dice_loss, dice_coef, iou, combined_loss
 
@@ -53,7 +53,7 @@ def load_data(path: str) -> tuple[list[str], list[str]]:
 def read_image(path):
     path = path.decode() # Convert bytes to string
     x = cv2.imread(path, cv2.IMREAD_COLOR)
-    x = x/255.0
+    x = x/255.0 # type: ignore
     x = x.astype(np.float32)
     return x
 
@@ -62,7 +62,7 @@ def read_image(path):
 def read_mask(path):
     path = path.decode() # Convert bytes to string
     y = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    y = y.astype(np.float32)
+    y = y.astype(np.float32) # type: ignore
     y = np.expand_dims(y, axis=-1) # Add channel dimension
     return y
 
