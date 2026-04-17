@@ -57,7 +57,7 @@ def save_results(image, mask, y_pred, save_path):
     masked_image = image * y_pred # Image and mask view
     y_pred = y_pred * 255 # Scale it to 255 for visualization
 
-    cat_images = np.concatenate([image, line, mask, line, y_pred], axis=1)
+    cat_images = np.concatenate([image, line, mask, line, y_pred, line, masked_image], axis=1)
     cv2.imwrite(save_path, cat_images)
 
         
