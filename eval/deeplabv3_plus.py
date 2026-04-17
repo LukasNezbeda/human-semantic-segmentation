@@ -92,7 +92,8 @@ if __name__ == "__main__":
 
     for x, y in tqdm(zip(test_x, test_y), total=len(test_x)):
         """ Name Extraction """
-        name = os.path.splitext(os.path.basename(x))[0]
+        name = x.split("/")[-1].split(".")[0] # Extracting the name of the image without extension
+        # name = os.path.splitext(os.path.basename(x))[0]
         # print(name)
 
         """ Reading the image """
