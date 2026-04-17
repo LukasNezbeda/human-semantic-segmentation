@@ -93,7 +93,7 @@ if __name__ == "__main__":
     for x, y in tqdm(zip(test_x, test_y), total=len(test_x)):
         """ Name Extraction """
         name = os.path.splitext(os.path.basename(x))[0]
-        print(name)
+        # print(name)
 
         """ Reading the image """
         image = cv2.imread(x, cv2.IMREAD_COLOR)
@@ -144,3 +144,7 @@ if __name__ == "__main__":
 
     df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score" , "Recall", "Precision"])
     df.to_csv("results/metrics.csv")
+
+    """ About the CSV file """
+    # The CSV file allows you to get insight on how each image in the testing set performed.
+    # This shows the capabilities of your model.
