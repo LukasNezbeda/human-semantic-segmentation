@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
         SCORE.append([name, acc_value, f1_value, jac_value, recall_value, precision_value])
 
-        break
+        # break
 
     """ Metrics values """
     score = [s[1:] for s in SCORE] # Extracting the metrics values from the set
