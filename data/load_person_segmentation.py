@@ -78,7 +78,7 @@ def augment_data(images, masks, save_path, augment=True):
             y1 = augmented["mask"]
             
             # Greyscale augmentation
-            x2 = cv2.cvtColor(x, cv2.COLOR_BGR2GRAY)
+            x2 = cv2.cvtColor(x, cv2.COLOR_BGR2GRAY) # type: ignore
             y2 = y
             
             # Channel shuffling
@@ -120,8 +120,8 @@ def augment_data(images, masks, save_path, augment=True):
                 m = augmented["mask"]
                 
             except Exception as e: # Resize as a fallback if cropping fails
-                i = cv2.resize(i, (W, H))
-                m = cv2.resize(m, (W, H))
+                i = cv2.resize(i, (W, H)) # type: ignore
+                m = cv2.resize(m, (W, H)) # type: ignore
             
             
             tmp_image_name = f"{name}_{index}.png"

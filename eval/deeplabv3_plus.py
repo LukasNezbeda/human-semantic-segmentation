@@ -23,7 +23,7 @@ from keras.models import Model
 from sklearn.metrics import accuracy_score, f1_score, jaccard_score, precision_score, recall_score
 from metrics.metrics import dice_loss, dice_coef, iou
 from models.deeplabv3_plus import deeplabv3_plus
-from train.deeplabv3_plus.train_dl3p_person_seg import load_data
+from train.deeplabv3_plus.train_deeplabv3_plus import load_data
 
 
 """ Global parameters """
