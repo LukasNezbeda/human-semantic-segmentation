@@ -17,7 +17,7 @@ from tqdm import tqdm
 import tensorflow as tf
 from keras.models import Model
 from metrics.metrics import dice_loss, dice_coef, iou
-from train.deeplabv3_plus.train_deeplabv3_plus import load_data, create_dir
+from train.train_deeplabv3_plus import load_data, create_dir
 
 """ Global parameters """
 H = 512
