@@ -1,11 +1,12 @@
 """Train DeepLabV3+ for human semantic segmentation.
 
 Supports:
-  - Person segmentation dataset with train/test split.
-  - PennFudan dataset using k-fold cross validation.
+    - Person segmentation dataset with train/test split.
+    - PennFudan dataset using k-fold cross validation.
+    - Cityscapes dataset with train/valid split.
 
 Example:
-    python train/deeplabv3_plus/train_deeplabv3_plus.py --dataset penn_fudan
+        python train/deeplabv3_plus/train_deeplabv3_plus.py --dataset penn_fudan
 """
 
 import argparse
@@ -43,11 +44,15 @@ from metrics.metrics import combined_loss, dice_coef, dice_loss, iou
 from models.deeplabv3_plus import deeplabv3_plus
 
 """ Global parameters """
-H = 512
-W = 512
+DEFAULT_HEIGHT = 512
+DEFAULT_WIDTH = 512
+CITYSCAPES_HEIGHT_DEFAULT = 512
+CITYSCAPES_WIDTH_DEFAULT = 1024
 PERSON_SEGMENTATION_DATASET = "person_segmentation"
 PENN_FUDAN_DATASET = "penn_fudan"
+CITYSCAPES_DATASET = "cityscapes"
 PENN_FUDAN_ROOT_DEFAULT = os.path.join("data", "penn_fudan", "new_data")
+CITYSCAPES_ROOT_DEFAULT = os.path.join("data", "cityscapes", "new_data")
 
 """ Directory creation """
 def create_dir(path: str) -> None:
@@ -114,7 +119,7 @@ def read_mask(path: bytes) -> np.ndarray:
         path: Mask path as bytes (TensorFlow input).
 
     Returns:
-        Float32 mask array with shape (H, W, 1).
+        Float32 mask array with shape (height, width, 1).
     """
     path = path.decode() # Convert bytes to string # type: ignore
     y = cv2.imread(path, cv2.IMREAD_GRAYSCALE) # type: ignore
@@ -123,12 +128,19 @@ def read_mask(path: bytes) -> np.ndarray:
     return y
 
 
-def tf_parse(x: tf.Tensor, y: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
+def tf_parse(
+    x: tf.Tensor,
+    y: tf.Tensor,
+    height: int,
+    width: int,
+) -> tuple[tf.Tensor, tf.Tensor]:
     """TensorFlow-compatible parsing wrapper.
 
     Args:
         x: Image path tensor.
         y: Mask path tensor.
+        height: Input image height.
+        width: Input image width.
 
     Returns:
         Tuple of image and mask tensors with fixed shapes.
@@ -142,25 +154,33 @@ def tf_parse(x: tf.Tensor, y: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
     # tf.numpy_function is needed to wrap a python function and use it as Tensorflow op
     # May sound that it is not iterable
     x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
-    x.set_shape([H, W, 3])
-    y.set_shape([H, W, 1])
+    x.set_shape([height, width, 3])
+    y.set_shape([height, width, 1])
     return x, y
 
 
 # Formatting dataset to be tensorflow compatible
-def tf_dataset(x: Sequence[str], y: Sequence[str], batch: int = 2) -> tf.data.Dataset:
+def tf_dataset(
+    x: Sequence[str],
+    y: Sequence[str],
+    height: int,
+    width: int,
+    batch: int = 2,
+) -> tf.data.Dataset:
     """Build a TensorFlow dataset pipeline.
 
     Args:
         x: Image paths.
         y: Mask paths.
+        height: Input image height.
+        width: Input image width.
         batch: Batch size.
 
     Returns:
         TensorFlow dataset.
     """
     datasset = tf.data.Dataset.from_tensor_slices((x, y))
-    datasset = datasset.map(tf_parse)
+    datasset = datasset.map(lambda img, mask: tf_parse(img, mask, height, width))
     dataset = datasset.batch(batch)
     dataset = dataset.prefetch(10)
 
@@ -189,6 +209,31 @@ def resolve_dataset_root(project_root: str, dataset_root: str) -> str:
     if os.path.isabs(dataset_root):
         return dataset_root
     return os.path.join(project_root, dataset_root)
+
+
+def resolve_dimensions(
+    dataset: str,
+    height: int | None,
+    width: int | None,
+) -> tuple[int, int]:
+    """Resolve image dimensions from dataset defaults and overrides.
+
+    Args:
+        dataset: Selected dataset name.
+        height: Optional height override.
+        width: Optional width override.
+
+    Returns:
+        Tuple of (height, width).
+    """
+    if dataset == CITYSCAPES_DATASET:
+        default_height, default_width = CITYSCAPES_HEIGHT_DEFAULT, CITYSCAPES_WIDTH_DEFAULT
+    else:
+        default_height, default_width = DEFAULT_HEIGHT, DEFAULT_WIDTH
+
+    final_height = height if height is not None else default_height
+    final_width = width if width is not None else default_width
+    return final_height, final_width
 
 
 def list_penn_fudan_folds(penn_root: str) -> list[str]:
@@ -282,6 +327,8 @@ def train_single_run(
     train_y: Sequence[str],
     val_x: Sequence[str],
     val_y: Sequence[str],
+    height: int,
+    width: int,
     batch_size: int,
     lr: float,
     num_epochs: int,
@@ -296,6 +343,8 @@ def train_single_run(
         train_y: Training mask paths.
         val_x: Validation image paths.
         val_y: Validation mask paths.
+        height: Input image height.
+        width: Input image width.
         batch_size: Batch size.
         lr: Learning rate.
         num_epochs: Number of epochs.
@@ -303,13 +352,13 @@ def train_single_run(
         csv_path: Output CSV log path.
         tensor_logs: TensorBoard log directory.
     """
-    train_dataset = tf_dataset(train_x, train_y, batch_size)
-    val_dataset = tf_dataset(val_x, val_y, batch_size)
+    train_dataset = tf_dataset(train_x, train_y, height, width, batch_size)
+    val_dataset = tf_dataset(val_x, val_y, height, width, batch_size)
 
     # Reset state between folds to keep memory usage stable.
     tf.keras.backend.clear_session()
 
-    model = deeplabv3_plus((H, W, 3))
+    model = deeplabv3_plus((height, width, 3))
     model.compile(
         loss=combined_loss,
         optimizer=Adam(lr),
@@ -335,11 +384,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         Parsed arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Train DeepLabV3+ on person_segmentation or PennFudan (k-fold).",
+        description="Train DeepLabV3+ on person_segmentation, PennFudan (k-fold), or Cityscapes.",
     )
     parser.add_argument(
         "--dataset",
-        choices=[PERSON_SEGMENTATION_DATASET, PENN_FUDAN_DATASET],
+        choices=[PERSON_SEGMENTATION_DATASET, PENN_FUDAN_DATASET, CITYSCAPES_DATASET],
         default=PERSON_SEGMENTATION_DATASET,
         help="Dataset to train on.",
     )
@@ -347,6 +396,23 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--penn-root",
         default=PENN_FUDAN_ROOT_DEFAULT,
         help="PennFudan k-fold root (contains fold_*/).",
+    )
+    parser.add_argument(
+        "--cityscapes-root",
+        default=CITYSCAPES_ROOT_DEFAULT,
+        help="Cityscapes prepared root (contains train/valid/test).",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=None,
+        help="Optional image height override.",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=None,
+        help="Optional image width override.",
     )
     return parser.parse_args(argv)
 
@@ -375,6 +441,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     num_epochs = 20
 
     project_root = get_project_root()
+    height, width = resolve_dimensions(args.dataset, args.height, args.width)
+    if height <= 0 or width <= 0:
+        print(f"Invalid image dimensions: height={height}, width={width}")
+        return 1
 
     if args.dataset == PERSON_SEGMENTATION_DATASET:
         """ Dataset"""
@@ -406,6 +476,51 @@ def main(argv: Sequence[str] | None = None) -> int:
             train_y,
             val_x,
             val_y,
+            height,
+            width,
+            batch_size,
+            lr,
+            num_epochs,
+            model_path,
+            csv_path,
+            tensor_logs,
+        )
+        return 0
+
+    if args.dataset == CITYSCAPES_DATASET:
+        cityscapes_root = resolve_dataset_root(project_root, args.cityscapes_root)
+        if not os.path.isdir(cityscapes_root):
+            print(f"Cityscapes root not found: {cityscapes_root}")
+            return 1
+
+        print(f"Cityscapes root: {cityscapes_root}")
+        train_path = os.path.join(cityscapes_root, "train")
+        val_path = os.path.join(cityscapes_root, "valid")
+
+        train_x, train_y = load_data(train_path)
+        train_x, train_y = shuffling(train_x, train_y)
+
+        val_x, val_y = load_data(val_path)
+
+        print(f"Training samples: {len(train_x)} | {len(train_y)}")
+        print(f"Validation samples: {len(val_x)} | {len(val_y)}")
+
+        output_dir = os.path.join(project_root, "runs", "deeplabv3_plus_cityscapes")
+        create_dir(output_dir)
+
+        tensor_logs = os.path.join(output_dir, "tensor_logs")
+        create_dir(tensor_logs)
+
+        model_path = os.path.join(output_dir, "deeplabv3_plus.h5")
+        csv_path = os.path.join(output_dir, "training_log.csv")
+
+        train_single_run(
+            train_x,
+            train_y,
+            val_x,
+            val_y,
+            height,
+            width,
             batch_size,
             lr,
             num_epochs,
@@ -456,6 +571,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             train_y,
             val_x,
             val_y,
+            height,
+            width,
             batch_size,
             lr,
             num_epochs,
