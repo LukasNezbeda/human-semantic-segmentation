@@ -29,7 +29,7 @@ from train.train_deeplabv3_plus import load_data
 """ Global parameters """
 H = 512
 W = 512
-USE_PENN_FUDAN_FOLDS = False
+USE_PENN_FUDAN_FOLDS = True
 
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
