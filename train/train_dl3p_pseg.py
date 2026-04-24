@@ -116,10 +116,10 @@ def main() -> None:
     # Get the project root directory (parent of the train folder)
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
-    model_path = os.path.join(project_root, "runs", "deeplabv3_plus.h5")
-    csv_path = os.path.join(project_root, "runs", "training_log.csv")
+    model_path = os.path.join(project_root, "runs", "dl3p_pseg", "deeplabv3_plus.h5")
+    csv_path = os.path.join(project_root, "runs", "dl3p_pseg", "training_log.csv")
     
-    tensor_logs = os.path.join(project_root, "runs", "tensor_logs")
+    tensor_logs = os.path.join(project_root, "runs", "dl3p_pseg", "tensor_logs")
     create_dir(tensor_logs)
     
     """ Dataset"""
