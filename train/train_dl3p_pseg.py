@@ -93,9 +93,9 @@ def tf_parse(x, y):
 
 # Formatting dataset to be tensorflow compatible
 def tf_dataset(x, y, batch=2):
-    datasset = tf.data.Dataset.from_tensor_slices((x, y))
-    datasset = datasset.map(tf_parse)
-    dataset = datasset.batch(batch)
+    dataset = tf.data.Dataset.from_tensor_slices((x, y))
+    dataset = dataset.map(tf_parse)
+    dataset = dataset.batch(batch)
     dataset = dataset.prefetch(10)
     
     return dataset
