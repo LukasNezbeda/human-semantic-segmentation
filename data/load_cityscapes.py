@@ -1,7 +1,7 @@
 """
-Prepare the Cityscapes dataset for binary human semantic segmentation.
+Prepare the Cityscapes dataset for human-only semantic segmentation.
 
-Creates train/valid/test splits with paired images and binary masks.
+Creates train/valid/test splits with binary masks for person and rider.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import os
 import random
 import sys
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Iterable, Sequence
 
 import cv2
 import numpy as np
@@ -26,90 +26,104 @@ class Pair:
 	mask_path: str
 
 
-IMAGE_ROOT_DEFAULT = os.path.join(
-	"data",
-	"cityscapes",
-	"Cityscape Dataset",
-	"leftImg8bit",
-)
-LABEL_ROOT_DEFAULT = os.path.join(
-	"data",
-	"cityscapes",
-	"Fine Annotations",
-	"gtFine",
-)
+INPUT_ROOT_DEFAULT = os.path.join("data", "cityscapes")
+IMAGE_ROOT_NAME = "Cityscape Dataset"
+IMAGE_SUBDIR = "leftImg8bit"
+MASK_ROOT_NAME = "Fine Annotations"
+MASK_SUBDIR = "gtFine"
+IMAGE_SUFFIX = "_leftImg8bit.png"
+MASK_SUFFIX = "_gtFine_labelIds.png"
 OUTPUT_ROOT_DEFAULT = os.path.join("data", "cityscapes", "new_data")
-INPUT_SPLITS = ("train", "val")
-OUTPUT_SPLITS = ("train", "valid", "test")
-SEED = 42
-TARGET_HEIGHT = 512
-TARGET_WIDTH = 1024
-TRAIN_RATIO = 0.70
-VALID_RATIO = 0.15
-TEST_RATIO = 0.15
-HUMAN_LABEL_IDS = (24, 25)
+DEFAULT_HEIGHT = 512
+DEFAULT_WIDTH = 1024
+RANDOM_STATE = 42
+CITYSCAPES_SPLITS = ("train", "val", "test")
+OUTPUT_SPLIT_MAP = {"train": "train", "val": "valid", "test": "test"}
+PERSON_LABEL_IDS = (24, 25)
 
 
 def create_dir(path: str) -> None:
-	"""Create a directory if it does not exist.
-
-	Args:
-		path: Directory path.
-	"""
+	"""Create a directory if it does not exist."""
 	if not os.path.exists(path):
 		os.makedirs(path)
 
 
 def is_non_empty_dir(path: str) -> bool:
-	"""Return True if a directory exists and contains any entries.
-
-	Args:
-		path: Directory path.
-
-	Returns:
-		True if the directory exists and has any content.
-	"""
+	"""Return True if a directory exists and contains any entries."""
 	if not os.path.isdir(path):
 		return False
 	return any(os.scandir(path))
 
 
-def collect_pairs(image_root: str, label_root: str) -> tuple[list[Pair], list[str]]:
-	"""Collect image/mask pairs from Cityscapes.
+def split_dirs(input_root: str, split: str) -> tuple[str, str]:
+	"""Return image and mask directories for a split.
 
 	Args:
-		image_root: Root directory for leftImg8bit images.
-		label_root: Root directory for gtFine labelIds masks.
+		input_root: Root directory containing Cityscapes data.
+		split: Dataset split name (train/val/test).
 
 	Returns:
-		A tuple of (pairs, missing_masks), where pairs are sorted by base name.
+		Tuple of (image_dir, mask_dir).
 	"""
-	if not os.path.isdir(image_root):
-		raise ValueError(f"Image root not found: {image_root}")
-	if not os.path.isdir(label_root):
-		raise ValueError(f"Label root not found: {label_root}")
+	image_dir = os.path.join(input_root, IMAGE_ROOT_NAME, IMAGE_SUBDIR, split)
+	mask_dir = os.path.join(input_root, MASK_ROOT_NAME, MASK_SUBDIR, split)
+	return image_dir, mask_dir
+
+
+def image_name_to_base(name: str) -> str | None:
+	"""Extract the shared base name from a Cityscapes image filename.
+
+	Args:
+		name: Filename such as *_leftImg8bit.png.
+
+	Returns:
+		Base name without suffix or None if the suffix does not match.
+	"""
+	if not name.endswith(IMAGE_SUFFIX):
+		return None
+	return name[: -len(IMAGE_SUFFIX)]
+
+
+def base_to_mask_name(base: str) -> str:
+	"""Create a mask filename from a base name."""
+	return f"{base}{MASK_SUFFIX}"
+
+
+def collect_pairs(input_root: str, split: str) -> tuple[list[Pair], list[str]]:
+	"""Collect image/mask pairs for a split.
+
+	Args:
+		input_root: Root directory containing Cityscapes data.
+		split: Dataset split name.
+
+	Returns:
+		Tuple of (pairs, missing_masks), where pairs are sorted by base name.
+	"""
+	image_dir, mask_dir = split_dirs(input_root, split)
+	if not os.path.isdir(image_dir):
+		raise ValueError(f"Image directory not found: {image_dir}")
+	if not os.path.isdir(mask_dir):
+		raise ValueError(f"Mask directory not found: {mask_dir}")
 
 	pairs: list[Pair] = []
 	missing_masks: list[str] = []
 
-	for root, _, files in os.walk(image_root):
-		for name in files:
-			if not name.endswith("_leftImg8bit.png"):
+	for root, _, files in os.walk(image_dir):
+		for filename in files:
+			base = image_name_to_base(filename)
+			if base is None:
 				continue
-			image_path = os.path.join(root, name)
-			city = os.path.basename(root)
-			split = os.path.basename(os.path.dirname(root))
-			if split not in INPUT_SPLITS:
-				continue
-			base = name.replace("_leftImg8bit.png", "")
-			mask_name = f"{base}_gtFine_labelIds.png"
-			mask_path = os.path.join(label_root, split, city, mask_name)
+			image_path = os.path.join(root, filename)
+			rel_dir = os.path.relpath(root, image_dir)
+			mask_subdir = mask_dir if rel_dir == "." else os.path.join(mask_dir, rel_dir)
+			mask_path = os.path.join(mask_subdir, base_to_mask_name(base))
 			if not os.path.exists(mask_path):
-				missing_masks.append(image_path)
+				missing_masks.append(base)
 				continue
 			pairs.append(Pair(base=base, image_path=image_path, mask_path=mask_path))
 
 	pairs.sort(key=lambda item: item.base)
+	missing_masks.sort()
 	return pairs, missing_masks
 
 
@@ -125,7 +139,7 @@ def center_crop_or_resize(
 		image: Image array.
 		target_height: Target height.
 		target_width: Target width.
-		interpolation: OpenCV interpolation to use for resizing.
+		interpolation: OpenCV interpolation for resizing.
 
 	Returns:
 		Output array with shape (target_height, target_width, ...) or
@@ -139,16 +153,16 @@ def center_crop_or_resize(
 	return cv2.resize(image, (target_width, target_height), interpolation=interpolation)
 
 
-def binarize_mask(mask: np.ndarray) -> np.ndarray:
-	"""Convert Cityscapes labelIds to human-only binary values.
+def binarize_mask_from_label_ids(mask: np.ndarray) -> np.ndarray:
+	"""Convert labelId mask to binary values {0,1} for person and rider.
 
 	Args:
-		mask: LabelIds mask array.
+		mask: LabelId mask array.
 
 	Returns:
 		Binary uint8 mask with values {0,1}.
 	"""
-	binary = np.isin(mask, HUMAN_LABEL_IDS).astype(np.uint8)
+	binary = np.isin(mask, PERSON_LABEL_IDS).astype(np.uint8)
 	return binary
 
 
@@ -176,88 +190,32 @@ def prepare_pair(
 	if mask is None:
 		raise ValueError(f"Failed to read mask: {pair.mask_path}")
 
-	image = center_crop_or_resize(
-		image,
-		target_height,
-		target_width,
-		interpolation=cv2.INTER_AREA,
-	)
-	mask = binarize_mask(mask)
-	mask = center_crop_or_resize(
-		mask,
-		target_height,
-		target_width,
-		interpolation=cv2.INTER_NEAREST,
-	)
-	mask = binarize_mask(mask)
-
-	if image.shape[:2] != (target_height, target_width):
-		raise RuntimeError(
-			f"Unexpected image shape {image.shape} for {pair.image_path}"
-		)
-	if mask.shape[:2] != (target_height, target_width):
-		raise RuntimeError(
-			f"Unexpected mask shape {mask.shape} for {pair.mask_path}"
-		)
+	image = center_crop_or_resize(image, target_height, target_width, cv2.INTER_LINEAR)
+	mask = binarize_mask_from_label_ids(mask)
+	mask = center_crop_or_resize(mask, target_height, target_width, cv2.INTER_NEAREST)
+	mask = (mask > 0).astype(np.uint8)
 
 	cv2.imwrite(output_image_path, image)
 	cv2.imwrite(output_mask_path, mask)
 
 
-def split_pairs(
-	pairs: Sequence[Pair],
-	train_ratio: float,
-	valid_ratio: float,
-	seed: int,
-) -> dict[str, list[Pair]]:
-	"""Split pairs into train/valid/test sets.
-
-	Args:
-		pairs: List of pairs.
-		train_ratio: Ratio for training split.
-		valid_ratio: Ratio for validation split.
-		seed: Random seed.
-
-	Returns:
-		Dictionary with train, valid, test splits.
-	"""
-	rng = random.Random(seed)
-	shuffled = list(pairs)
-	rng.shuffle(shuffled)
-
-	total = len(shuffled)
-	train_count = int(total * train_ratio)
-	valid_count = int(total * valid_ratio)
-	test_count = total - train_count - valid_count
-
-	train_pairs = shuffled[:train_count]
-	valid_pairs = shuffled[train_count : train_count + valid_count]
-	test_pairs = shuffled[train_count + valid_count : train_count + valid_count + test_count]
-
-	return {
-		"train": train_pairs,
-		"valid": valid_pairs,
-		"test": test_pairs,
-	}
-
-
 def write_split(
-	split_name: str,
 	pairs: Sequence[Pair],
 	output_root: str,
+	output_split: str,
 	target_height: int,
 	target_width: int,
 ) -> None:
-	"""Write split pairs to disk.
+	"""Write one split to disk.
 
 	Args:
-		split_name: Split name (train/valid/test).
-		pairs: Pair list.
+		pairs: Pairs for the split.
 		output_root: Output root directory.
+		output_split: Output split name.
 		target_height: Output height.
 		target_width: Output width.
 	"""
-	split_dir = os.path.join(output_root, split_name)
+	split_dir = os.path.join(output_root, output_split)
 	image_dir = os.path.join(split_dir, "image")
 	mask_dir = os.path.join(split_dir, "mask")
 
@@ -270,94 +228,92 @@ def write_split(
 		output_mask_path = os.path.join(mask_dir, filename)
 		prepare_pair(pair, output_image_path, output_mask_path, target_height, target_width)
 
-	validate_split_counts(output_root, split_name)
 
-
-def validate_split_counts(output_root: str, split_name: str) -> None:
-	"""Validate that split image and mask counts match.
-
-	Args:
-		output_root: Output root directory.
-		split_name: Split name.
-	"""
-	split_dir = os.path.join(output_root, split_name)
-	image_dir = os.path.join(split_dir, "image")
-	mask_dir = os.path.join(split_dir, "mask")
-	image_count = len([name for name in os.listdir(image_dir) if name.endswith(".png")])
-	mask_count = len([name for name in os.listdir(mask_dir) if name.endswith(".png")])
-	if image_count != mask_count:
-		raise RuntimeError(
-			f"Mismatched counts in {split_name}: {image_count} images vs {mask_count} masks"
-		)
-
-
-def spot_check_outputs(
+def validate_outputs(
 	output_root: str,
-	split_name: str,
+	output_splits: Iterable[str],
 	target_height: int,
 	target_width: int,
-	seed: int,
 ) -> None:
-	"""Spot-check masks for binary values and correct shapes.
+	"""Validate that each split has matching counts and expected shapes.
 
 	Args:
 		output_root: Output root directory.
-		split_name: Split name.
-		target_height: Output height.
-		target_width: Output width.
+		output_splits: Output split names.
+		target_height: Expected height.
+		target_width: Expected width.
+	"""
+	for split in output_splits:
+		split_dir = os.path.join(output_root, split)
+		image_dir = os.path.join(split_dir, "image")
+		mask_dir = os.path.join(split_dir, "mask")
+		image_names = sorted(name for name in os.listdir(image_dir) if name.endswith(".png"))
+		mask_names = sorted(name for name in os.listdir(mask_dir) if name.endswith(".png"))
+
+		if image_names != mask_names:
+			raise RuntimeError(f"Mismatched image/mask files in split '{split}'.")
+
+		for name in image_names:
+			image_path = os.path.join(image_dir, name)
+			mask_path = os.path.join(mask_dir, name)
+			image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+			mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+			if image is None:
+				raise RuntimeError(f"Failed to read image: {image_path}")
+			if mask is None:
+				raise RuntimeError(f"Failed to read mask: {mask_path}")
+			if image.shape[:2] != (target_height, target_width):
+				raise RuntimeError(
+					f"Unexpected image size {image.shape[:2]} in {image_path}"
+				)
+			if mask.shape != (target_height, target_width):
+				raise RuntimeError(
+					f"Unexpected mask size {mask.shape} in {mask_path}"
+				)
+
+
+def spot_check_masks(output_root: str, output_splits: Iterable[str], seed: int = 42) -> None:
+	"""Spot-check a few masks for binary values.
+
+	Args:
+		output_root: Output root directory.
+		output_splits: Output split names.
 		seed: Random seed.
 	"""
 	rng = random.Random(seed)
-	split_dir = os.path.join(output_root, split_name)
-	image_dir = os.path.join(split_dir, "image")
-	mask_dir = os.path.join(split_dir, "mask")
-	mask_names = [name for name in os.listdir(mask_dir) if name.endswith(".png")]
-	if not mask_names:
-		return
-	mask_name = rng.choice(mask_names)
-	mask_path = os.path.join(mask_dir, mask_name)
-	image_path = os.path.join(image_dir, mask_name)
-
-	mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-	image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-	if mask is None or image is None:
-		raise RuntimeError(f"Failed to read spot-check files: {image_path}, {mask_path}")
-	if mask.shape[:2] != (target_height, target_width):
-		raise RuntimeError(f"Mask has unexpected shape: {mask_path}")
-	if image.shape[:2] != (target_height, target_width):
-		raise RuntimeError(f"Image has unexpected shape: {image_path}")
-	unique_values = np.unique(mask)
-	if not set(unique_values.tolist()).issubset({0, 1}):
-		raise RuntimeError(f"Mask not binary: {mask_path}")
+	for split in output_splits:
+		mask_dir = os.path.join(output_root, split, "mask")
+		mask_names = [name for name in os.listdir(mask_dir) if name.endswith(".png")]
+		if not mask_names:
+			continue
+		sample_names = rng.sample(mask_names, k=min(3, len(mask_names)))
+		for name in sample_names:
+			mask_path = os.path.join(mask_dir, name)
+			mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+			if mask is None:
+				raise RuntimeError(f"Failed to read mask for validation: {mask_path}")
+			unique_values = np.unique(mask)
+			if not set(unique_values.tolist()).issubset({0, 1}):
+				raise RuntimeError(f"Mask not binary: {mask_path}")
 
 
-def summarize(splits: dict[str, Sequence[Pair]], output_root: str) -> None:
-	"""Print summary of splits and example paths.
+def summarize(split_pairs: dict[str, Sequence[Pair]], output_root: str) -> None:
+	"""Print a summary of splits and example paths.
 
 	Args:
-		splits: Mapping of split names to pairs.
+		split_pairs: Mapping of output split names to pairs.
 		output_root: Output root directory.
 	"""
-	total = sum(len(pairs) for pairs in splits.values())
+	total = sum(len(pairs) for pairs in split_pairs.values())
 	print(f"Total paired samples: {total}")
-	for split_name, pairs in splits.items():
-		print(f"Split {split_name} count: {len(pairs)}")
+	for split, pairs in split_pairs.items():
+		print(f"Split '{split}' count: {len(pairs)}")
 		if pairs:
 			first_pair = pairs[0]
-			image_path = os.path.join(
-				output_root,
-				split_name,
-				"image",
-				f"{first_pair.base}.png",
-			)
-			mask_path = os.path.join(
-				output_root,
-				split_name,
-				"mask",
-				f"{first_pair.base}.png",
-			)
-			print(f"Split {split_name} example image: {image_path}")
-			print(f"Split {split_name} example mask:  {mask_path}")
+			image_path = os.path.join(output_root, split, "image", f"{first_pair.base}.png")
+			mask_path = os.path.join(output_root, split, "mask", f"{first_pair.base}.png")
+			print(f"Split '{split}' example image: {image_path}")
+			print(f"Split '{split}' example mask:  {mask_path}")
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -370,17 +326,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 		Parsed arguments.
 	"""
 	parser = argparse.ArgumentParser(
-		description="Prepare Cityscapes data for binary human segmentation."
+		description="Prepare Cityscapes data for human-only segmentation."
 	)
 	parser.add_argument(
-		"--image-root",
-		default=IMAGE_ROOT_DEFAULT,
-		help="Path to leftImg8bit root directory.",
-	)
-	parser.add_argument(
-		"--label-root",
-		default=LABEL_ROOT_DEFAULT,
-		help="Path to gtFine root directory.",
+		"--input-root",
+		default=INPUT_ROOT_DEFAULT,
+		help="Path to Cityscapes root directory.",
 	)
 	parser.add_argument(
 		"--output-root",
@@ -390,14 +341,14 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 	parser.add_argument(
 		"--height",
 		type=int,
-		default=TARGET_HEIGHT,
-		help="Output height.",
+		default=DEFAULT_HEIGHT,
+		help="Output image height.",
 	)
 	parser.add_argument(
 		"--width",
 		type=int,
-		default=TARGET_WIDTH,
-		help="Output width.",
+		default=DEFAULT_WIDTH,
+		help="Output image width.",
 	)
 	return parser.parse_args(argv)
 
@@ -420,44 +371,46 @@ def main(argv: Sequence[str] | None = None) -> int:
 		)
 		return 1
 
-	if not os.path.isdir(args.image_root):
-		print(f"Image root not found: {args.image_root}")
-		return 1
-	if not os.path.isdir(args.label_root):
-		print(f"Label root not found: {args.label_root}")
-		return 1
-
-	pairs, missing_masks = collect_pairs(args.image_root, args.label_root)
-	if missing_masks:
-		print(f"Skipping {len(missing_masks)} images without matching masks.")
-		for missing in missing_masks[:5]:
-			print(f"Missing mask for: {missing}")
-		if len(missing_masks) > 5:
-			print("Additional missing masks omitted...")
-
-	if not pairs:
-		print("No valid image/mask pairs found.")
+	if not os.path.isdir(args.input_root):
+		print(f"Input root not found: {args.input_root}")
 		return 1
 
 	create_dir(args.output_root)
-	splits = split_pairs(pairs, TRAIN_RATIO, VALID_RATIO, SEED)
-	for split_name in OUTPUT_SPLITS:
-		write_split(
-			split_name,
-			splits[split_name],
-			args.output_root,
-			args.height,
-			args.width,
-		)
-		spot_check_outputs(
-			args.output_root,
-			split_name,
-			args.height,
-			args.width,
-			seed=SEED,
-		)
+	for split in CITYSCAPES_SPLITS:
+		output_split = OUTPUT_SPLIT_MAP[split]
+		split_dir = os.path.join(args.output_root, output_split)
+		create_dir(os.path.join(split_dir, "image"))
+		create_dir(os.path.join(split_dir, "mask"))
 
-	summarize(splits, args.output_root) # type: ignore
+	missing_total: list[str] = []
+	split_pairs: dict[str, Sequence[Pair]] = {}
+
+	for split in CITYSCAPES_SPLITS:
+		pairs, missing = collect_pairs(args.input_root, split)
+		if missing:
+			print(f"Split '{split}': skipping {len(missing)} images without matching masks.")
+			for base in missing[:5]:
+				print(f"Missing mask for: {base}")
+			if len(missing) > 5:
+				print("Additional missing masks omitted...")
+			missing_total.extend(missing)
+
+		output_split = OUTPUT_SPLIT_MAP[split]
+		if not pairs:
+			print(f"Warning: no valid pairs found for split '{split}'.")
+			split_pairs[output_split] = []
+			continue
+		write_split(pairs, args.output_root, output_split, args.height, args.width)
+		split_pairs[output_split] = pairs
+
+	output_splits = [OUTPUT_SPLIT_MAP[split] for split in CITYSCAPES_SPLITS]
+	validate_outputs(args.output_root, output_splits, args.height, args.width)
+	spot_check_masks(args.output_root, output_splits, seed=RANDOM_STATE)
+	summarize(split_pairs, args.output_root)
+
+	if missing_total:
+		print(f"Total missing masks across splits: {len(missing_total)}")
+
 	return 0
 
 
