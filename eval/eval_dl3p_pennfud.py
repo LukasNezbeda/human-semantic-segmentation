@@ -165,8 +165,8 @@ if __name__ == "__main__":
 		print(f"Fold {fold_index} Accuracy: {score[0]:0.5f}")
 		print(f"Fold {fold_index} F1-Score: {score[1]:0.5f}")
 		print(f"Fold {fold_index} Jaccard-Score: {score[2]:0.5f}")
-		print(f"Fold {fold_index} Recall: {score[4]:0.5f}")
-		print(f"Fold {fold_index} Precision: {score[3]:0.5f}")
+		print(f"Fold {fold_index} Recall: {score[3]:0.5f}")
+		print(f"Fold {fold_index} Precision: {score[4]:0.5f}")
 
 		df = pd.DataFrame(
 			score_rows,
@@ -180,8 +180,8 @@ if __name__ == "__main__":
 				"accuracy": float(score[0]),
 				"f1_score": float(score[1]),
 				"jaccard_score": float(score[2]),
-				"recall": float(score[4]),
-				"precision": float(score[3]),
+				"recall": float(score[3]),
+				"precision": float(score[4]),
 			}
 		)
 

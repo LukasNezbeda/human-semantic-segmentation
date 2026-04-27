@@ -33,7 +33,7 @@ W = 512
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-model_path = os.path.join(project_root, "runs", "deeplabv3_plus.h5")
+model_path = os.path.join(project_root, "runs", "dl3p_pseg", "deeplabv3_plus.h5")
 
 """ Directory Creation """
 def create_dir(path: str) -> None:
@@ -139,8 +139,8 @@ if __name__ == "__main__":
     print(f"Accuracy: {score[0]:0.5f}")
     print(f"F1-Score: {score[1]:0.5f}")
     print(f"Jaccard-Score: {score[2]:0.5f}")
-    print(f"Recall: {score[4]:0.5f}")
-    print(f"Precision: {score[3]:0.5f}")
+    print(f"Recall: {score[3]:0.5f}")
+    print(f"Precision: {score[4]:0.5f}")
 
     df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score" , "Recall", "Precision"])
     df.to_csv("results/metrics.csv")
