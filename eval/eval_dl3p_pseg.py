@@ -35,6 +35,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 model_path = os.path.join(project_root, "runs", "dl3p_pseg", "deeplabv3_plus.h5")
 
+results_root = os.path.join(project_root, "results", "dl3p_pseg")
+
 """ Directory Creation """
 def create_dir(path: str) -> None:
     if not os.path.exists(path):
@@ -67,7 +69,8 @@ if __name__ == "__main__":
     tf.random.set_seed(42)
     
     """ Storing files """
-    create_dir("results")
+    # create_dir("results")
+    create_dir(results_root)
     
     # """ Loading model (legacy) """
     # with CustomObjectScope({'dice_loss': dice_loss, 'dice_coef': dice_coef, 'iou': iou}):
@@ -115,7 +118,7 @@ if __name__ == "__main__":
         y_pred = y_pred.astype(np.int32)
 
         """ Saving the prediction """
-        save_image_path = f"results/{name}.png"
+        save_image_path = os.path.join(results_root, f"{name}.png")
         save_results(image, mask, y_pred, save_image_path)
 
         """ Flatten Arrays """
@@ -143,7 +146,7 @@ if __name__ == "__main__":
     print(f"Precision: {score[4]:0.5f}")
 
     df = pd.DataFrame(SCORE, columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score" , "Recall", "Precision"])
-    df.to_csv("results/metrics.csv")
+    df.to_csv(os.path.join(results_root, "metrics.csv"), index=False)
 
     """ About the CSV file """
     # The CSV file allows you to get insight on how each image in the testing set performed.
