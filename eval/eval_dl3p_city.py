@@ -33,6 +33,7 @@ from train.train_dl3p_city import load_data
 """ Global parameters """
 H = 512
 W = 1024
+ZERO_DIVISION = 0
 
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -153,10 +154,34 @@ if __name__ == "__main__":
 
 		""" Metrics Calculation """
 		acc_value = accuracy_score(mask_flat, y_pred_flat)
-		f1_value = f1_score(mask_flat, y_pred_flat, labels=[0, 1], average="binary")
-		jac_value = jaccard_score(mask_flat, y_pred_flat, labels=[0, 1], average="binary")
-		recall_value = recall_score(mask_flat, y_pred_flat, labels=[0, 1], average="binary")
-		precision_value = precision_score(mask_flat, y_pred_flat, labels=[0, 1], average="binary")
+		f1_value = f1_score(
+			mask_flat,
+			y_pred_flat,
+			labels=[0, 1],
+			average="binary",
+			zero_division=ZERO_DIVISION,
+		)
+		jac_value = jaccard_score(
+			mask_flat,
+			y_pred_flat,
+			labels=[0, 1],
+			average="binary",
+			zero_division=ZERO_DIVISION,
+		)
+		recall_value = recall_score(
+			mask_flat,
+			y_pred_flat,
+			labels=[0, 1],
+			average="binary",
+			zero_division=ZERO_DIVISION,
+		)
+		precision_value = precision_score(
+			mask_flat,
+			y_pred_flat,
+			labels=[0, 1],
+			average="binary",
+			zero_division=ZERO_DIVISION,
+		)
 
 		SCORE.append([name, acc_value, f1_value, jac_value, recall_value, precision_value])
 
