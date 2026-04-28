@@ -113,7 +113,8 @@ if __name__ == "__main__":
 	dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
 	print(f"Dataset path: {dataset_path}")
 
-	test_path = os.path.join(dataset_path, "test")
+	test_path = os.path.join(dataset_path, "eval")
+	# test_path = os.path.join(dataset_path, "test")
 	test_x, test_y = load_data(test_path)
 
 	print(f"Test samples: {len(test_x)} | {len(test_y)}")
