@@ -1,7 +1,5 @@
-"""Evaluation for DeepLabV3+ on the Cityscapes dataset.
-
-Evaluates a trained DeepLabV3+ model on the prepared Cityscapes test split and
-saves qualitative prediction tiles plus a CSV of per-image metrics.
+"""
+This file contains the evaluation code for DeepLabV3+ on the Cityscapes dataset.
 """
 
 import os
@@ -39,9 +37,7 @@ W = 1024
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-dataset_root = os.path.join(project_root, "data", "cityscapes", "new_data")
-runs_root = os.path.join(project_root, "runs", "dl3p_city")
-model_path = os.path.join(runs_root, "deeplabv3_plus.h5")
+model_path = os.path.join(project_root, "runs", "dl3p_city", "deeplabv3_plus.h5")
 results_root = os.path.join(project_root, "results", "dl3p_city")
 
 
@@ -56,23 +52,28 @@ def create_dir(path: str) -> None:
 		os.makedirs(path)
 
 
-def save_results(image: np.ndarray, mask: np.ndarray, y_pred: np.ndarray, save_path: str) -> None:
+def save_results(
+	image: np.ndarray,
+	mask: np.ndarray,
+	y_pred: np.ndarray,
+	save_path: str,
+) -> None:
 	"""Save visualization tiles for image, mask, prediction, and masked image.
 
 	Args:
 		image: RGB image array.
-		mask: Binary mask array with values {0,1}.
-		y_pred: Binary prediction array with values {0,1}.
+		mask: Binary mask array.
+		y_pred: Binary prediction array.
 		save_path: Output image path.
 	"""
 	line = np.ones((H, 10, 3)) * 128  # Grey image
 
-	mask = np.expand_dims(mask, axis=-1)  # (H, W, 1)
-	mask = np.concatenate([mask, mask, mask], axis=-1)  # (H, W, 3)
+	mask = np.expand_dims(mask, axis=-1)
+	mask = np.concatenate([mask, mask, mask], axis=-1)
 	mask = mask * 255
 
-	y_pred = np.expand_dims(y_pred, axis=-1)  # (H, W, 1)
-	y_pred = np.concatenate([y_pred, y_pred, y_pred], axis=-1)  # (H, W, 3)
+	y_pred = np.expand_dims(y_pred, axis=-1)
+	y_pred = np.concatenate([y_pred, y_pred, y_pred], axis=-1)
 
 	masked_image = image * y_pred
 	y_pred = y_pred * 255
@@ -98,33 +99,26 @@ if __name__ == "__main__":
 	np.random.seed(42)
 	tf.random.set_seed(42)
 
-	""" Storing files """
 	create_dir(results_root)
 
-	print(f"Dataset path: {dataset_root}")
-	print(f"Runs path: {runs_root}")
-	print(f"Results path: {results_root}")
-
 	if not os.path.exists(model_path):
-		raise FileNotFoundError(
-			"Missing Cityscapes model weights at: "
-			f"{model_path}. "
-			"Expected from training script output in runs/dl3p_city. "
-			"If you trained elsewhere, you may have weights under results/, e.g. "
-			"results/2026-04-26/dl3p_city/deeplabv3_plus.h5."
-		)
+		raise FileNotFoundError(f"Model weights not found: {model_path}")
 
 	""" Loading model """
 	model: Model = deeplabv3_plus((H, W, 3))
 	model.load_weights(model_path)
 
 	""" Loading data """
-	test_path = os.path.join(dataset_root, "test")
+	dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
+	print(f"Dataset path: {dataset_path}")
+
+	test_path = os.path.join(dataset_path, "test")
 	test_x, test_y = load_data(test_path)
+
 	print(f"Test samples: {len(test_x)} | {len(test_y)}")
 
 	""" Evaluation and Prediction """
-	SCORE: list[list[object]] = []
+	SCORE = []
 
 	for x, y in tqdm(zip(test_x, test_y), total=len(test_x)):
 		""" Name Extraction """
@@ -134,27 +128,27 @@ if __name__ == "__main__":
 		image = cv2.imread(x, cv2.IMREAD_COLOR)
 		if image is None:
 			raise ValueError(f"Failed to read image: {x}")
-		x_img = image / 255.0  # type: ignore
+		x_img = image / 255.0
 		x_img = np.expand_dims(x_img, axis=0)
 
 		""" Reading the mask """
 		mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)
 		if mask is None:
 			raise ValueError(f"Failed to read mask: {y}")
-		mask_bin = binarize_mask(mask)
+		mask = binarize_mask(mask)
 
 		""" Prediction """
-		y_pred = model.predict(x_img, verbose=0)[0] # type: ignore
+		y_pred = model.predict(x_img)[0]
 		y_pred = np.squeeze(y_pred, axis=-1)
 		y_pred = y_pred > 0.5
 		y_pred = y_pred.astype(np.int32)
 
 		""" Saving the prediction """
 		save_image_path = os.path.join(results_root, f"{name}.png")
-		save_results(image, mask_bin, y_pred, save_image_path)
+		save_results(image, mask, y_pred, save_image_path)
 
 		""" Flatten Arrays """
-		mask_flat = mask_bin.flatten()
+		mask_flat = mask.flatten()
 		y_pred_flat = y_pred.flatten()
 
 		""" Metrics Calculation """
@@ -166,12 +160,9 @@ if __name__ == "__main__":
 
 		SCORE.append([name, acc_value, f1_value, jac_value, recall_value, precision_value])
 
-	if not SCORE:
-		raise RuntimeError(f"No samples found under: {test_path}")
-
 	""" Metrics values """
 	score = [s[1:] for s in SCORE]
-	score = np.mean(score, axis=0) # type: ignore
+	score = np.mean(score, axis=0)
 	print(f"Accuracy: {score[0]:0.5f}")
 	print(f"F1-Score: {score[1]:0.5f}")
 	print(f"Jaccard-Score: {score[2]:0.5f}")
@@ -182,5 +173,4 @@ if __name__ == "__main__":
 		SCORE,
 		columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score", "Recall", "Precision"],
 	)
-	df.to_csv(os.path.join(results_root, "metrics.csv"))
-
+	df.to_csv(os.path.join(results_root, "metrics.csv"), index=False)
