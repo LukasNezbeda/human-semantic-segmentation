@@ -15,7 +15,7 @@ import pandas as pd
 from glob import glob
 from tqdm import tqdm
 import tensorflow as tf
-from keras.models import Model
+from tensorflow.keras.models import Model #type: ignore
 from metrics.metrics import dice_loss, dice_coef, iou
 from train.train_dl3p_pseg import load_data, create_dir
 

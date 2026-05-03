@@ -18,7 +18,7 @@ import cv2
 import pandas as pd
 from tqdm import tqdm
 import tensorflow as tf
-from keras.models import Model
+from tensorflow.keras.models import Model #type: ignore
 from sklearn.metrics import accuracy_score, f1_score, jaccard_score, precision_score, recall_score
 from metrics.metrics import dice_loss, dice_coef, iou
 from models.deeplabv3_plus import deeplabv3_plus

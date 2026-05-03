@@ -6,12 +6,13 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN optimizations for better performance on some platforms
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Suppress TensorFlow logging
 
-from keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Conv2DTranspose, Concatenate, Input
-from keras.layers import AveragePooling2D, GlobalAveragePooling2D, UpSampling2D, Reshape, Dense
-from keras.models import Model
-from keras.applications import ResNet50
-
 import tensorflow as tf
+from tensorflow.keras.layers import AveragePooling2D, GlobalAveragePooling2D, UpSampling2D, Reshape, Dense #type: ignore
+from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Conv2DTranspose, Concatenate, Input #type: ignore
+from tensorflow.keras.models import Model #type: ignore
+# from tensorflow.keras.applications import ResNet50 
+
+
 
 """ Generalized attention mechanics, light on parameters but improves CNN performance """
 # Global average pool to capture information outside the immediate receptive field
@@ -78,7 +79,13 @@ def deeplabv3_plus(shape):
     
     """ Encoder """
     # include_top=False means we don't want to include an classifier network (we only want segmentation) 
-    encoder = ResNet50(weights="imagenet", include_top=False, input_tensor=inputs)
+    # encoder = ResNet50(weights="imagenet", include_top=False, input_tensor=inputs)
+
+    encoder = tf.keras.applications.ResNet50(
+        weights="imagenet", 
+        include_top=False, 
+        input_tensor=inputs
+    )
     
     image_features = encoder.get_layer("conv4_block6_out").output
     x_a = ASPP(image_features)

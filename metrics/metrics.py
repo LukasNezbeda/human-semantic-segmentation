@@ -5,8 +5,8 @@ This file contains the metrics and loss function used for training DeepLabV3+ on
 
 import numpy as np
 import tensorflow as tf
-from keras.layers import Flatten
-from keras import backend as K
+from tensorflow.keras.layers import Flatten #type: ignore
+from tensorflow.keras import backend as K #type: ignore
 
 smooth = 1e-15
 

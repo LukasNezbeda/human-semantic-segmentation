@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from keras.models import Model
+from tensorflow.keras.models import Model #type: ignore
 from sklearn.metrics import (
 	accuracy_score,
 	f1_score,
