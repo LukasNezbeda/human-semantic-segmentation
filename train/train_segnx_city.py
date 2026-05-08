@@ -1,5 +1,5 @@
 """
-This file contains the training code for SegFormer on the Cityscapes dataset.
+This file contains the training code for SegNext on the Cityscapes dataset.
 """
 
 import os
@@ -156,7 +156,7 @@ def tf_dataset(
 
 
 def main() -> None:
-	"""Train SegFormer on Cityscapes."""
+	"""Train SegNext on Cityscapes."""
 	""" Seeding """
 	np.random.seed(42)
 	tf.random.set_seed(42)
