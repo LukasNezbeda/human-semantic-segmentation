@@ -38,7 +38,7 @@ ZERO_DIVISION = 0
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-model_path = os.path.join(project_root, "runs", "segnx_city", "segnext.h5")
+model_path = os.path.join(project_root, "runs", "segnx_city", "segnext.weights.h5")
 results_root = os.path.join(project_root, "results", "segnx_city")
 
 
