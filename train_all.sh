@@ -35,8 +35,8 @@ done
 echo "All trainings completed. Batch: $BATCH_TS"
 
 # Running in background:
-# chmod +x run_all_trainings.sh
-# nohup bash ./run_all_trainings.sh > logs/batch_nohup_$(date +%Y%m%d_%H%M%S).out 2>&1 &
+# chmod +x train_all.sh
+# nohup bash ./train_all.sh > logs/batch_nohup_$(date +%Y%m%d_%H%M%S).out 2>&1 &
 
 # Monitoring logs:
 # tail -f logs/batch_nohup_*.out
