@@ -135,7 +135,7 @@ def tf_parse(x: tf.Tensor, y: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
 def tf_dataset(
 	x: Sequence[str],
 	y: Sequence[str],
-	batch: int = 2,
+	batch: int = 8,
 ) -> tf.data.Dataset:
 	"""Build a TensorFlow dataset from image and mask paths.
 
@@ -162,9 +162,9 @@ def main() -> None:
 	tf.random.set_seed(42)
 
 	""" Hyperparameters """
-	batch_size = 2
-	lr = 1e-4
-	num_epochs = 20
+	batch_size = 8
+	lr = 1e-3
+	num_epochs = 100
 
 	project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 	dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
@@ -205,9 +205,9 @@ def main() -> None:
 		ModelCheckpoint(model_path, verbose=1, save_best_only=True),
 		ReduceLROnPlateau(
 			monitor="val_loss",
-			factor=0.1,
+			factor=0.5,
 			patience=5,
-			min_lr=1e-7,
+			min_lr=5e-5,
 			verbose=1,
 		),
 		CSVLogger(csv_path),
