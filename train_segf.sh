@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# run experiments
+python -u train/train_segf_city.py > log_segf_city.txt
+
+
