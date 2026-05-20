@@ -6,9 +6,9 @@ set -euo pipefail
 
 SCRIPTS=(
   "train_dl3p.sh"
-  "train_segf.sh"
-  "train_segnx.sh"
-  "train_unet3p.sh"
+  # "train_segf.sh"
+  # "train_segnx.sh"
+  # "train_unet3p.sh"
 )
 
 LOG_DIR="logs"
