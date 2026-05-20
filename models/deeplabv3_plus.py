@@ -81,17 +81,32 @@ def deeplabv3_plus(shape):
     # include_top=False means we don't want to include an classifier network (we only want segmentation) 
     # encoder = ResNet50(weights="imagenet", include_top=False, input_tensor=inputs)
 
-    encoder = tf.keras.applications.ResNet50(
+    # encoder = tf.keras.applications.ResNet50(
+    #     weights="imagenet", 
+    #     include_top=False, 
+    #     input_tensor=inputs
+    # )
+    encoder = tf.keras.applications.MobileNetV2(
         weights="imagenet", 
         include_top=False, 
-        input_tensor=inputs
+        input_tensor=inputs,
+        alpha=1.0
     )
     
-    image_features = encoder.get_layer("conv4_block6_out").output
+
+    # ResNet50
+    # image_features = encoder.get_layer("conv4_block6_out").output
+    # MobilenetV2
+    image_features = encoder.get_layer("block_13_expand_relu").output # Stride 16
+    
     x_a = ASPP(image_features)
     x_a = UpSampling2D((4, 4), interpolation="bilinear")(x_a)
     
-    x_b = encoder.get_layer("conv2_block2_out").output
+    # ResNet50
+    # x_b = encoder.get_layer("conv2_block2_out").output
+    # MobilenetV2
+    x_b = encoder.get_layer("block_3_expand_relu").output # Stride 4
+    
     x_b = Conv2D(48, 1, padding="same", use_bias=False)(x_b)
     x_b = BatchNormalization()(x_b)
     x_b = Activation("relu")(x_b)
