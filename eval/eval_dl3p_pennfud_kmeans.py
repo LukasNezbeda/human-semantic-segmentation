@@ -22,7 +22,7 @@ from tensorflow.keras.models import Model #type: ignore
 from sklearn.metrics import accuracy_score, f1_score, jaccard_score, precision_score, recall_score
 from metrics.metrics import dice_loss, dice_coef, iou
 from models.deeplabv3_plus import deeplabv3_plus
-from train.train_dl3p_pennfud import load_data
+from train.train_dl3p_pennfud_kmeans import load_data
 
 
 """ Global parameters """
@@ -33,7 +33,7 @@ FOLD_COUNT = 5
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-dataset_root = os.path.join(project_root, "data", "penn_fudan", "new_data")
+dataset_root = os.path.join(project_root, "data", "penn_fudan", "new_data_kmeans")
 runs_root = os.path.join(project_root, "runs", "dl3p_pennfud")
 results_root = os.path.join(project_root, "results", "dl3p_pennfud")
 
