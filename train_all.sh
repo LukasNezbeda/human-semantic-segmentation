@@ -41,3 +41,7 @@ echo "All trainings completed. Batch: $BATCH_TS"
 # Monitoring logs:
 # tail -f logs/batch_nohup_*.out
 # ls -lt logs/
+
+# Killing nohup process:
+# ps aux | grep nohup
+# kill -9 <PID>
