@@ -1,7 +1,7 @@
 """
 Prepare the Cityscapes dataset for human-only semantic segmentation.
 
-Creates train/valid/test splits with binary masks for person and rider.
+Creates train/valid/test splits with binary masks for person and rider, testing part is split from the validation set.
 """
 
 from __future__ import annotations
