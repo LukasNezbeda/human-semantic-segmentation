@@ -11,6 +11,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+# If GPU 0 is busy, use GPU 1 for training
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 import cv2
 import numpy as np
 import pandas as pd
