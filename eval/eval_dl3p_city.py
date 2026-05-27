@@ -13,7 +13,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # If GPU 0 is busy, use GPU 1 for training
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import cv2
 import numpy as np
@@ -33,17 +33,30 @@ from metrics.metrics import dice_coef, dice_loss, iou
 from models.deeplabv3_plus import deeplabv3_plus
 from train.train_dl3p_city import load_data
 
+""" Swapping models and datasets """
+# 1) Global parameters
+# 2) Cityscapes Testing
+# 3) Loading Data
 
 """ Global parameters """
-H = 512
-W = 1024
+# H = 512
+# W = 1024
 ZERO_DIVISION = 0
+
+""" Global params (Penn Fudan)"""
+H = 512
+W = 512
 
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Cityscapes Testing
 model_path = os.path.join(project_root, "runs", "dl3p_city", "deeplabv3_plus.h5")
 results_root = os.path.join(project_root, "results", "dl3p_city")
+
+# Pennfudan Testing
+# model_path = os.path.join(project_root, "runs", "dl3p_pennfud", "deeplabv3_plus.h5")
+# results_root = os.path.join(project_root, "results", "dl3p_pennfud")
 
 
 """ Directory Creation """
@@ -114,11 +127,13 @@ if __name__ == "__main__":
 	model.load_weights(model_path)
 
 	""" Loading data """
-	dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
+	# dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
+	dataset_path = os.path.join(project_root, "data", "penn_fudan", "new_data")
+
 	print(f"Dataset path: {dataset_path}")
 
-	test_path = os.path.join(dataset_path, "valid")
-	# test_path = os.path.join(dataset_path, "test")
+	# test_path = os.path.join(dataset_path, "valid")
+	test_path = os.path.join(dataset_path, "test")
 	test_x, test_y = load_data(test_path)
 
 	print(f"Test samples: {len(test_x)} | {len(test_y)}")
