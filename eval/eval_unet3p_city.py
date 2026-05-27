@@ -39,13 +39,13 @@ from train.train_unet3p_city import load_data
 # 3) Loading Data
 
 """ Global parameters """
-H = 512
-W = 1024
+# H = 512
+# W = 1024
 ZERO_DIVISION = 0
 
 """ Global params (Penn Fudan)"""
-# H = 512
-# W = 512
+H = 512
+W = 512
 
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
