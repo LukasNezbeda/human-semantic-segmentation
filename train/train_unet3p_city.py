@@ -31,7 +31,7 @@ from tensorflow.keras.callbacks import (  # type: ignore
 )
 from tensorflow.keras.optimizers import Adam  # type: ignore
 from tensorflow.keras.metrics import Recall, Precision  # type: ignore
-from models.unet3 import unet3plus
+from models.unet3_plus import unet3plus
 from metrics.metrics import dice_coef, iou, combined_loss
 
 """ Global parameters """
