@@ -393,7 +393,7 @@ class MLPDecoder(layers.Layer):
     
 def segformer_b0(
     input_shape=(224, 224, 3),
-    num_classes=19,
+    num_classes=1,
     embedding_dims=[32, 64, 128, 256],
     num_heads=[1, 2, 4, 8],
     sr_ratios=[8, 4, 2, 1],
@@ -432,7 +432,8 @@ def segformer_b0(
 if __name__ == "__main__":
     seg_b0 = segformer_b0(
         input_shape=(256, 256, 3),
-        num_classes=N_CLASSES,
+        # num_classes=N_CLASSES,
+        num_classes=1,
         embedding_dims=[32, 64, 128, 256],
         num_heads=[1, 2, 4, 8],
         sr_ratios=[8, 4, 2, 1],
