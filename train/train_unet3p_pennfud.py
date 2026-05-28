@@ -217,7 +217,7 @@ def tf_augment(image: tf.Tensor, mask: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]
 def tf_dataset(
 	x: Sequence[str],
 	y: Sequence[str],
-	batch: int = 8,
+	batch: int = 4,
 	augment: bool = False,
 ) -> tf.data.Dataset:
 	"""Build a TensorFlow dataset from image and mask paths.

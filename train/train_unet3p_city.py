@@ -135,7 +135,7 @@ def tf_parse(x: tf.Tensor, y: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
 def tf_dataset(
 	x: Sequence[str],
 	y: Sequence[str],
-	batch: int = 8,
+	batch: int = 4,
 ) -> tf.data.Dataset:
 	"""Build a TensorFlow dataset from image and mask paths.
 
