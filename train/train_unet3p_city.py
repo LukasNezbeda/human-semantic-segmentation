@@ -162,7 +162,7 @@ def main() -> None:
 	tf.random.set_seed(42)
 
 	""" Hyperparameters """
-	batch_size = 8
+	batch_size = 4
 	lr = 1e-3
 	num_epochs = 100
 
