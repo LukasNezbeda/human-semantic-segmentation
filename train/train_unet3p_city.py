@@ -31,7 +31,7 @@ from tensorflow.keras.callbacks import (  # type: ignore
 )
 from tensorflow.keras.optimizers import Adam  # type: ignore
 from tensorflow.keras.metrics import Recall, Precision  # type: ignore
-from models.unet3_plus import unet3_plus
+from models.unet3 import unet3plus
 from metrics.metrics import dice_coef, iou, combined_loss
 
 """ Global parameters """
@@ -193,7 +193,7 @@ def main() -> None:
 	val_dataset = tf_dataset(val_x, val_y, batch_size)
 
 	""" Model """
-	model = unet3_plus((H, W, 3))
+	model = unet3plus((H, W, 3))
 	model.compile(
 		loss=combined_loss,
 		optimizer=Adam(lr),
