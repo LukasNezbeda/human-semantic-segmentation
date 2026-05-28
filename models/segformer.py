@@ -391,7 +391,7 @@ class MLPDecoder(layers.Layer):
         mask = tf.image.resize(mask, size=output_size, method="bilinear")
         return self.softmax(mask)
     
-def build_segformer(
+def segformer_b0(
     input_shape=(224, 224, 3),
     num_classes=19,
     embedding_dims=[32, 64, 128, 256],
@@ -430,7 +430,7 @@ def build_segformer(
 
 
 if __name__ == "__main__":
-    seg_b0 = build_segformer(
+    seg_b0 = segformer_b0(
         input_shape=(256, 256, 3),
         num_classes=N_CLASSES,
         embedding_dims=[32, 64, 128, 256],
