@@ -164,7 +164,7 @@ def main() -> None:
 	""" Hyperparameters """
 	batch_size = 8
 	lr = 1e-3
-	num_epochs = 100
+	num_epochs = 300
 
 	project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 	dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
