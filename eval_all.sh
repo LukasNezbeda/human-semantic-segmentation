@@ -5,9 +5,9 @@ set -euo pipefail
 # cd /path/to/your/project
 
 SCRIPTS=(
-    "eval_dl3p.sh"
+    # "eval_dl3p.sh"
     "eval_segf.sh"
-    "eval_segnx.sh"
+    # "eval_segnx.sh"
     "eval_unet3p.sh"
 )
 
