@@ -357,7 +357,11 @@ class MLPDecoder(layers.Layer):
         self.classify_mlp = layers.Conv2D(
             filters=num_classes, kernel_size=1, padding="same", name="classify_mlp"
         )
-        self.softmax = layers.Softmax(axis=-1)
+        self.activation = (
+            layers.Activation("sigmoid")
+            if num_classes == 1
+            else layers.Softmax(axis=-1)
+        )
 
     def call(self, encoder_features):
         """
@@ -389,7 +393,7 @@ class MLPDecoder(layers.Layer):
         # Upsample to input resolution
         output_size = target_shape * 4
         mask = tf.image.resize(mask, size=output_size, method="bilinear")
-        return self.softmax(mask)
+        return self.activation(mask)
     
 def segformer_b0(
     input_shape=(224, 224, 3),
