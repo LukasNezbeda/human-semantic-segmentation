@@ -161,7 +161,6 @@ if __name__ == "__main__":
 		mask = binarize_mask(mask)
 
 		""" Prediction """
-		y_pred = model.predict(x_img)[0]
 		# Measure model forward-pass latency for this image.
 		inference_start = time.perf_counter()
 		y_pred = model.predict(x_img, verbose=0)[0]
