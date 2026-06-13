@@ -225,6 +225,7 @@ if __name__ == "__main__":
 	total_inference_time = float(np.sum(inference_times))
 	avg_inference_time = float(np.mean(inference_times)) if inference_times else 0.0
 	avg_inference_time_ms = avg_inference_time * 1000.0
+	fps = (1.0 / avg_inference_time) if avg_inference_time > 0 else 0.0
 	print(f"Accuracy: {score[0]:0.5f}")
 	print(f"F1-Score: {score[1]:0.5f}")
 	print(f"Jaccard-Score: {score[2]:0.5f}")
@@ -233,6 +234,7 @@ if __name__ == "__main__":
 	print(f"Total Inference Time (s): {total_inference_time:0.5f}")
 	print(f"Average Inference Time per Image (s): {avg_inference_time:0.5f}")
 	print(f"Average Inference Time per Image (ms): {avg_inference_time_ms:0.2f}")
+	print(f"FPS: {fps:0.2f}")
 
 	df = pd.DataFrame(
 		SCORE,
