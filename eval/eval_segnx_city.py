@@ -4,6 +4,7 @@ This file contains the evaluation code for SegNext on the Cityscapes dataset.
 
 import os
 import sys
+import time
 
 # Add parent directory to path to enable imports
 # Allows to reach the metrics and train modules
@@ -140,6 +141,7 @@ if __name__ == "__main__":
 
 	""" Evaluation and Prediction """
 	SCORE = []
+	inference_times = []
 
 	for x, y in tqdm(zip(test_x, test_y), total=len(test_x)):
 		""" Name Extraction """
@@ -160,6 +162,11 @@ if __name__ == "__main__":
 
 		""" Prediction """
 		y_pred = model.predict(x_img)[0]
+		# Measure model forward-pass latency for this image.
+		inference_start = time.perf_counter()
+		y_pred = model.predict(x_img, verbose=0)[0]
+		inference_time = time.perf_counter() - inference_start
+		inference_times.append(inference_time)
 		y_pred = np.squeeze(y_pred, axis=-1)
 		y_pred = y_pred > 0.5
 		y_pred = y_pred.astype(np.int32)
@@ -203,19 +210,43 @@ if __name__ == "__main__":
 			zero_division=ZERO_DIVISION,
 		)
 
-		SCORE.append([name, acc_value, f1_value, jac_value, recall_value, precision_value])
+		SCORE.append([
+			name, 
+			acc_value, 
+			f1_value, 
+			jac_value, 
+			recall_value, 
+			precision_value,
+			inference_time
+		])
 
 	""" Metrics values """
-	score = [s[1:] for s in SCORE]
+	score = [s[1:6] for s in SCORE]
 	score = np.mean(score, axis=0)
+	total_inference_time = float(np.sum(inference_times))
+	avg_inference_time = float(np.mean(inference_times)) if inference_times else 0.0
+	avg_inference_time_ms = avg_inference_time * 1000.0
+	fps = (1.0 / avg_inference_time) if avg_inference_time > 0 else 0.0
 	print(f"Accuracy: {score[0]:0.5f}")
 	print(f"F1-Score: {score[1]:0.5f}")
 	print(f"Jaccard-Score: {score[2]:0.5f}")
 	print(f"Recall: {score[3]:0.5f}")
 	print(f"Precision: {score[4]:0.5f}")
+	print(f"Total Inference Time (s): {total_inference_time:0.5f}")
+	print(f"Average Inference Time per Image (s): {avg_inference_time:0.5f}")
+	print(f"Average Inference Time per Image (ms): {avg_inference_time_ms:0.2f}")
+	print(f"FPS: {fps:0.2f}")
 
 	df = pd.DataFrame(
 		SCORE,
-		columns=["Name", "Accuracy", "F1-Score", "Jaccard-Score", "Recall", "Precision"],
+		columns=[
+			"Name", 
+			"Accuracy", 
+			"F1-Score", 
+			"Jaccard-Score", 
+			"Recall", 
+			"Precision",
+			"Inference Time (s)"
+		],
 	)
 	df.to_csv(os.path.join(results_root, "metrics.csv"), index=False)
