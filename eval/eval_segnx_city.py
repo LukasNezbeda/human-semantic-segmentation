@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import Model  # type: ignore
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 from sklearn.metrics import (
 	accuracy_score,
 	f1_score,
@@ -113,6 +114,16 @@ def binarize_mask(mask: np.ndarray) -> np.ndarray:
 	return (mask > 0).astype(np.int32)
 
 
+def create_frozen_inference_function(model: Model) -> tf.types.experimental.ConcreteFunction:
+	@tf.function
+	def tf_func_call(inp: tf.Tensor) -> tf.Tensor:
+		return model(inp, training=False)
+
+	input_tensor_spec = tf.TensorSpec(shape=(None, H, W, 3), dtype=tf.float32)
+	concrete_function = tf_func_call.get_concrete_function(input_tensor_spec) # type: ignore
+	return convert_variables_to_constants_v2(concrete_function) # type: ignore
+
+
 if __name__ == "__main__":
 	""" Seeding """
 	np.random.seed(42)
@@ -126,6 +137,8 @@ if __name__ == "__main__":
 	""" Loading model """
 	model: Model = segnext((H, W, 3))
 	model.load_weights(model_path)
+
+	frozen_func = create_frozen_inference_function(model)
 
 	""" Loading data """
 	# dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
@@ -151,8 +164,10 @@ if __name__ == "__main__":
 		image = cv2.imread(x, cv2.IMREAD_COLOR)
 		if image is None:
 			raise ValueError(f"Failed to read image: {x}")
-		x_img = image / 255.0
+		# Normalize and ensure float32 for TensorFlow
+		x_img = (image / 255.0).astype(np.float32)
 		x_img = np.expand_dims(x_img, axis=0)
+		x_tensor = tf.convert_to_tensor(x_img)
 
 		""" Reading the mask """
 		mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)
@@ -163,9 +178,18 @@ if __name__ == "__main__":
 		""" Prediction """
 		# Measure model forward-pass latency for this image.
 		inference_start = time.perf_counter()
-		y_pred = model.predict(x_img, verbose=0)[0]
+		try:
+			out = frozen_func(x_tensor)
+			if isinstance(out, (list, tuple)):
+				y_pred = out[0].numpy()
+			else:
+				y_pred = out.numpy()
+		except Exception:
+			y_pred = model.predict(x_img, verbose=0)[0]
 		inference_time = time.perf_counter() - inference_start
 		inference_times.append(inference_time)
+		if isinstance(y_pred, np.ndarray) and y_pred.ndim == 4 and y_pred.shape[0] == 1:
+			y_pred = y_pred[0]
 		y_pred = np.squeeze(y_pred, axis=-1)
 		y_pred = y_pred > 0.5
 		y_pred = y_pred.astype(np.int32)
