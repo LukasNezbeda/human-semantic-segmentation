@@ -185,7 +185,7 @@ if __name__ == "__main__":
 		""" Prediction """
 		# Measure model forward-pass latency for this image.
 		inference_start = time.perf_counter()
-		y_pred = frozen_func(x_img)[0].numpy()[0]
+		y_pred = frozen_func(x_img)
 		# y_pred = model.predict(x_img, verbose=0)[0]
 		inference_time = time.perf_counter() - inference_start
 		inference_times.append(inference_time)
