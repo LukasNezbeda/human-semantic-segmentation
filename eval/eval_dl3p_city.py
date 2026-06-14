@@ -129,8 +129,8 @@ def create_frozen_inference_function(model: Model) -> tf.types.experimental.Conc
 		return model(inp, training=False)
 
 	input_tensor_spec = tf.TensorSpec(shape=(None, H, W, 3), dtype=tf.float32)
-	concrete_function = tf_func_call.get_concrete_function(input_tensor_spec)
-	return convert_variables_to_constants_v2(concrete_function)
+	concrete_function = tf_func_call.get_concrete_function(input_tensor_spec) # type: ignore
+	return convert_variables_to_constants_v2(concrete_function) # type: ignore
 
 
 if __name__ == "__main__":
@@ -186,6 +186,7 @@ if __name__ == "__main__":
 		# Measure model forward-pass latency for this image.
 		inference_start = time.perf_counter()
 		y_pred = frozen_func(x_img)[0].numpy()[0]
+		# y_pred = model.predict(x_img, verbose=0)[0]
 		inference_time = time.perf_counter() - inference_start
 		inference_times.append(inference_time)
 		y_pred = np.squeeze(y_pred, axis=-1)
