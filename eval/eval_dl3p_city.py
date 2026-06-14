@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import Model #type: ignore
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 from sklearn.metrics import (
 	accuracy_score,
 	f1_score,
@@ -40,24 +41,24 @@ from train.train_dl3p_city import load_data
 # 3) Loading Data
 
 """ Global parameters """
-# H = 512
-# W = 1024
+H = 512
+W = 1024
 ZERO_DIVISION = 0
 
 """ Global params (Penn Fudan)"""
-H = 512
-W = 512
+# H = 512
+# W = 512
 
 # Get the project root directory (parent of the train folder)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Cityscapes Testing
 model_path = os.path.join(project_root, "runs", "dl3p_city", "deeplabv3_plus.h5")
-# results_root = os.path.join(project_root, "results", "dl3p_city")
+results_root = os.path.join(project_root, "results", "dl3p_city")
 
 # Pennfudan Testing
 # model_path = os.path.join(project_root, "runs", "dl3p_pennfud", "deeplabv3_plus.h5")
-results_root = os.path.join(project_root, "results", "dl3p_pennfud")
+# results_root = os.path.join(project_root, "results", "dl3p_pennfud")
 
 
 """ Directory Creation """
@@ -113,6 +114,25 @@ def binarize_mask(mask: np.ndarray) -> np.ndarray:
 	return (mask > 0).astype(np.int32)
 
 
+def create_frozen_inference_function(model: Model) -> tf.types.experimental.ConcreteFunction:
+	"""Create a frozen concrete function for inference.
+
+	Args:
+		model: Loaded Keras model.
+
+	Returns:
+		Frozen concrete function used for inference.
+	"""
+
+	@tf.function
+	def tf_func_call(inp: tf.Tensor) -> tf.Tensor:
+		return model(inp, training=False)
+
+	input_tensor_spec = tf.TensorSpec(shape=(None, H, W, 3), dtype=tf.float32)
+	concrete_function = tf_func_call.get_concrete_function(input_tensor_spec)
+	return convert_variables_to_constants_v2(concrete_function)
+
+
 if __name__ == "__main__":
 	""" Seeding """
 	np.random.seed(42)
@@ -127,9 +147,11 @@ if __name__ == "__main__":
 	model: Model = deeplabv3_plus((H, W, 3))
 	model.load_weights(model_path)
 
+	frozen_func = create_frozen_inference_function(model)
+
 	""" Loading data """
-	# dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
-	dataset_path = os.path.join(project_root, "data", "penn_fudan", "new_data")
+	dataset_path = os.path.join(project_root, "data", "cityscapes", "new_data")
+	# dataset_path = os.path.join(project_root, "data", "penn_fudan", "new_data")
 
 	print(f"Dataset path: {dataset_path}")
 
@@ -163,7 +185,7 @@ if __name__ == "__main__":
 		""" Prediction """
 		# Measure model forward-pass latency for this image.
 		inference_start = time.perf_counter()
-		y_pred = model.predict(x_img, verbose=0)[0]
+		y_pred = frozen_func(x_img)[0].numpy()[0]
 		inference_time = time.perf_counter() - inference_start
 		inference_times.append(inference_time)
 		y_pred = np.squeeze(y_pred, axis=-1)
