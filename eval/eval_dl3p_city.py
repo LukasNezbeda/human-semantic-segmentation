@@ -173,8 +173,10 @@ if __name__ == "__main__":
 		image = cv2.imread(x, cv2.IMREAD_COLOR)
 		if image is None:
 			raise ValueError(f"Failed to read image: {x}")
-		x_img = image / 255.0
+		# Normalize and ensure float32 for TensorFlow
+		x_img = (image / 255.0).astype(np.float32)
 		x_img = np.expand_dims(x_img, axis=0)
+		x_tensor = tf.convert_to_tensor(x_img)
 
 		""" Reading the mask """
 		mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)
@@ -185,10 +187,22 @@ if __name__ == "__main__":
 		""" Prediction """
 		# Measure model forward-pass latency for this image.
 		inference_start = time.perf_counter()
-		y_pred = frozen_func(x_img)[0].numpy()[0]
-		# y_pred = model.predict(x_img, verbose=0)[0]
+		try:
+			# Call the frozen concrete function with a tf.Tensor
+			out = frozen_func(x_tensor)
+			# convert to numpy array; handle tuple/list or single tensor
+			if isinstance(out, (list, tuple)):
+				y_pred = out[0].numpy()
+			else:
+				y_pred = out.numpy()
+		except Exception:
+			# Fallback to Keras predict if the frozen function fails
+			y_pred = model.predict(x_img, verbose=0)[0]
 		inference_time = time.perf_counter() - inference_start
 		inference_times.append(inference_time)
+		# y_pred may have shape (1, H, W, 1) or (H, W, 1) — normalize to (H, W, 1)
+		if isinstance(y_pred, np.ndarray) and y_pred.ndim == 4 and y_pred.shape[0] == 1:
+			y_pred = y_pred[0]
 		y_pred = np.squeeze(y_pred, axis=-1)
 		y_pred = y_pred > 0.5
 		y_pred = y_pred.astype(np.int32)
